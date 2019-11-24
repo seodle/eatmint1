@@ -13,8 +13,6 @@ library(xlsx);library(dplyr);library(lubridate)
 ```
 
 ```{r}
-#("C:/Users/Utilisateur/Google Drive/1-Thesis/4-EATMINT1/Analyses/Analyses/Analyse_taux_utilisation_actes/Analyse 4 - Wilcoxon test") #HP
-setwd("C:/Users/Sunny/Google Drive/1-Thesis/4-EATMINT1/Analyses/Analyses/Analyse_taux_utilisation_actes/Analyse 4 - Wilcoxon test") #Surface
 options(scipen=999) #remove scientific notation
 data <- read.csv2("taux_utilisation_actes.csv")
 data_eat <- data[data$eat == "Oui",]
