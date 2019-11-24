@@ -2061,14 +2061,8 @@ emotions.results
 ```{r}
 #Exporting results in .xlsx file
 
-
 write.xlsx(emotions.results, "results15.xlsx") 
 
-=======
-
-```{r}
-write.xlsx(emotions.results, "results5.xlsx")
->>>>>>> 15_acts_problem
 ```
 
 
