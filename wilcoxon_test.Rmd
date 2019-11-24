@@ -276,11 +276,11 @@ collaborative.processes.occurences.per.category.per.participant.percentage
 ```
 
 
-##Windows size
+## Windows size
 ```{r}
 #variables
 
-max.window.size <- 15 #size of the window = number of collaborative acts per window : the size of the window is shorter when another emotion is encountered before max.window.size is reached or the end of the collaborative acts
+max.window.size <- 5 #size of the window = number of collaborative acts per window : the size of the window is shorter when another emotion is encountered before max.window.size is reached or the end of the collaborative acts
 ```
 
 If there is not at least (max.window.size) collaborative processes following the emotion of interest -> this occurence is not taken into account for the computation of the relative use
@@ -335,7 +335,7 @@ for (p in participants_eat_interested_P01)
 
   interested.collaborative.processes.table
   
-#compute the real-time use for every collaborative process
+#compute the real-time use for every collaborative act
 
   x <- c()
   for (i in collaborative.processes)
@@ -399,16 +399,16 @@ rownames(non.interested.table.p2) <- collaborative.processes
 for (p in participants_eat_interested_P01)
 {
   interested.times <- data[which(data$participant == p & data$shared.emotion =="interested"),c("unix.time.video")]
-  
   to.be.dropped <- vector()
   
   for (i in seq(1:length(interested.times)))
   {
     to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > interested.times[i])[1:max.window.size])
-    
   }
   
-  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotion windows
   
   data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
   
@@ -432,12 +432,9 @@ for (p in participants_eat_interested_P01)
 
 non.interested.table.p2
 
-#results for P01 participants_eat
-
 n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
 non.interested.table.p1 <- data.frame(n)
 rownames(non.interested.table.p1) <- collaborative.processes
-
 
 for (p in participants_eat_interested_P02)
 {
@@ -450,6 +447,8 @@ for (p in participants_eat_interested_P02)
     to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > interested.times[i])[1:max.window.size])
     
   }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
   
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
@@ -602,6 +601,8 @@ for (p in participants_eat_focused_P01)
     
   }
   
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
   data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
@@ -645,6 +646,8 @@ for (p in participants_eat_focused_P02)
     to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > focused.times[i])[1:max.window.size])
     
   }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
   
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
@@ -796,6 +799,8 @@ for (p in participants_eat_delighted_P01)
     
   }
   
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
   data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
@@ -839,6 +844,8 @@ for (p in participants_eat_delighted_P02)
     to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > delighted.times[i])[1:max.window.size])
     
   }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
   
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
@@ -989,6 +996,8 @@ for (p in participants_eat_satisfied_P01)
     
   }
   
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
   data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
@@ -1032,6 +1041,8 @@ for (p in participants_eat_satisfied_P02)
     to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > satisfied.times[i])[1:max.window.size])
     
   }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
   
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
@@ -1182,6 +1193,8 @@ for (p in participants_eat_amused_P01)
     
   }
   
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
   data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
@@ -1225,6 +1238,8 @@ for (p in participants_eat_amused_P02)
     to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > amused.times[i])[1:max.window.size])
     
   }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
   
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
@@ -1375,6 +1390,8 @@ for (p in participants_eat_relaxed_P01)
     
   }
   
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
   data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
@@ -1418,6 +1435,8 @@ for (p in participants_eat_relaxed_P02)
     to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > relaxed.times[i])[1:max.window.size])
     
   }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
   
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
@@ -1568,6 +1587,8 @@ for (p in participants_eat_confident_P01)
     
   }
   
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
   data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
@@ -1611,6 +1632,8 @@ for (p in participants_eat_confident_P02)
     to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > confident.times[i])[1:max.window.size])
     
   }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
   
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
@@ -1759,6 +1782,8 @@ for (p in participants_eat_confused_P01)
     
   }
   
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
   data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
@@ -1802,6 +1827,8 @@ for (p in participants_eat_confused_P02)
     to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > confused.times[i])[1:max.window.size])
     
   }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
   
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
   
@@ -2028,12 +2055,11 @@ emotions.results$confused_sd.no.emotion <- sd.no.emotion
 emotions.results$confused_sd.emotion <- sd.emotion
 
 emotions.results
+```
+## Export
 
-#Surface
-write.xlsx(emotions.results, "C:/Users/Sunny/Google Drive/1-Thesis/4-EATMINT1/Analyses/Analyses/Analyse_taux_utilisation_actes/Analyse 4 - Wilcoxon test/results15.xlsx") 
-
-#write.xlsx(emotions.results, "C:/Users/Utilisateur/Google Drive/1-Thesis/4-EATMINT1/Analyses/Analyses/Analyse_taux_utilisation_actes/Analyse 4 - Wilcoxon test/results5.xlsx") #HP
-
+```{r}
+write.xlsx(emotions.results, "results5.xlsx")
 ```
 
 
