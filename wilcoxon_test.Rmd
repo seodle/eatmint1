@@ -1,5 +1,5 @@
 ---
-title: "EATMINT1 experiment - Wilcoxon test"
+title: "EATMINT1 experiment - Sharing emotions generates online adaptative collaborative acts"
 author: "Sunny Avry"
 date: "July 17th, 2019"
 output:
@@ -21,8 +21,14 @@ data_eat <- data[data$eat == "Oui",]
 data_eat
 ```
 
-```{r}
+### Global variables
 
+```{r}
+#window size
+max.window.size <- 5 #size of the window = number of collaborative acts per window
+max.window.size
+
+#dyad having used the emotion awareness tool (eat condition) for sharing their emotions 
 dyads_eat <- c(
 "D02",
 "D05",
@@ -36,6 +42,7 @@ dyads_eat <- c(
 "D27",
 "D29")
 
+#participants in eat condition
 participants_eat <- c(
 "D02P01",
 "D02P02",
@@ -60,6 +67,7 @@ participants_eat <- c(
 "D29P01",
 "D29P02")
 
+#participants in no-eat condition
 participants_no_eat <- c(
 "D04P01",
 "D04P02",
@@ -78,6 +86,7 @@ participants_no_eat <- c(
 "D24P01",
 "D24P02")
 
+#emotions displayed during the collaborative problem-solving
 emotions <- c(
 "interested",
 "focused",
@@ -101,6 +110,7 @@ emotions <- c(
 "anxious",
 "impatient")
 
+#collaborative acts emitted by participants
 collaborative.processes <- c(
 "accept",
 "agree",
@@ -131,8 +141,9 @@ collaborative.processes <- c(
 "show.solidarity",
 "tool.discourse",
 "use.social.convention")
+
 ```
-## Overall statistics eat sample
+## Overall statistics
 ```{r}
 #total number of emotions
 overall.emotions.occurences <-  sum(data$shared.emotion != "") 
@@ -272,14 +283,6 @@ for (i in collaborative.processes) {
 }
 collaborative.processes.occurences.per.category.per.participant.percentage
 
-```
-
-
-## Windows size
-```{r}
-#variables
-
-max.window.size <- 5 #size of the window = number of collaborative acts per window : the size of the window is shorter when another emotion is encountered before max.window.size is reached or the end of the collaborative acts
 ```
 
 If there is not at least (max.window.size) collaborative processes following the emotion of interest -> this occurence is not taken into account for the computation of the relative use
@@ -2056,12 +2059,11 @@ emotions.results$confused_sd.emotion <- sd.emotion
 emotions.results
 ```
 ## Export
-<<<<<<< HEAD
 
 ```{r}
 #Exporting results in .xlsx file
 
-write.xlsx(emotions.results, "results15.xlsx") 
+write.xlsx(emotions.results, paste0("results",toString(max.window.size),".xlsx")) 
 
 ```
 
