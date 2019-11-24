@@ -2025,15 +2025,16 @@ emotions.results$confused_mean.emotion <- mean.emotion
 emotions.results$confused_sd.no.emotion <- sd.no.emotion
 emotions.results$confused_sd.emotion <- sd.emotion
 
+
+emotions.results
 ```
 ## Export
 
 ```{r}
 #Exporting results in .xlsx file
 
-emotions.results
 
-write.xlsx(emotions.results, "results10.xlsx") 
+write.xlsx(emotions.results, "results15.xlsx") 
 
 ```
 
