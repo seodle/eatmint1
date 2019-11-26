@@ -452,7 +452,9 @@ n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
 non.interested.table.p1 <- data.frame(n)
 rownames(non.interested.table.p1) <- collaborative.processes
 
-for (p in participants_eat_interested_P02)
+#participants_eat_interested_P02
+
+for (p in c("D07P02") )
 {
   interested.times <- data[which(data$participant == p & data$shared.emotion =="interested"),c("unix.time.video")]
   
@@ -469,29 +471,14 @@ for (p in participants_eat_interested_P02)
   
   data.kept <- data[-to.be.dropped,] #data.kept is the data without emotion windows
   
+  print(data.kept)
+  
   data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"1"),]
   
   #keep a number of lines that is a multiple of max.windows.size = number of no-emotion window
   n <- nrow(data.kept)
   
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
-  
-  12 %% 5
-  12 / 5
-  12 %/% 5
-  
-  dtest <- c(2,3,5,6,7,8,4,5,4,3,4,5)
-  
-  max.window.size <- 15
-
-  data.kept[c(1:((n%%max.window.size)*max.window.size)),]
-  
-  length(data.kept[c(1:((n%%max.window.size)*max.window.size)),]$participant)
-  
-  
-  
-  
-  print(length(data.kept$participant))
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   results <- c()
   for (process in collaborative.processes)
