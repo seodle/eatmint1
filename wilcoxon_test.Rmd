@@ -473,9 +473,25 @@ for (p in participants_eat_interested_P02)
   
   #keep a number of lines that is a multiple of max.windows.size = number of no-emotion window
   n <- nrow(data.kept)
+  
   data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
   
-  length(data.kept$participant)
+  12 %% 5
+  12 / 5
+  12 %/% 5
+  
+  dtest <- c(2,3,5,6,7,8,4,5,4,3,4,5)
+  
+  max.window.size <- 15
+
+  data.kept[c(1:((n%%max.window.size)*max.window.size)),]
+  
+  length(data.kept[c(1:((n%%max.window.size)*max.window.size)),]$participant)
+  
+  
+  
+  
+  print(length(data.kept$participant))
   
   results <- c()
   for (process in collaborative.processes)
