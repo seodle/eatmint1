@@ -498,7 +498,6 @@ for (col in colnames(non.interested.table)){
 }
 
 sum(non.interested.table$D07P01)
-
 ```
 
 ## Focused
