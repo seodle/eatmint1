@@ -1,0 +1,16 @@
+---
+title: "EATMINT1 experiment - Sharing emotions generates online adaptative collaborative acts - charts"
+author: "Sunny Avry"
+date: "November 27th, 2019"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+## Import data
+
+```{r}
+options(scipen=999) #remove scientific notation
+results5 <- read.csv2("taux_utilisation_actes.csv") #results5 is the sheet for the results with a window size of 5 (cf. emotion.window.size in analysis.Rmd)
+```
