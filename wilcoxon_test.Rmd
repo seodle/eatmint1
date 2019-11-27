@@ -431,7 +431,7 @@ for (p in participants_eat_interested_P01)
   
   #Keep a number of lines that is a multiple of max.windows.size = number of no-emotion windows
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -452,9 +452,7 @@ n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
 non.interested.table.p1 <- data.frame(n)
 rownames(non.interested.table.p1) <- collaborative.processes
 
-#participants_eat_interested_P02
-
-for (p in c("D07P02") )
+for (p in participants_eat_interested_P02)
 {
   interested.times <- data[which(data$participant == p & data$shared.emotion =="interested"),c("unix.time.video")]
   
@@ -650,7 +648,7 @@ for (p in participants_eat_focused_P01)
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -694,7 +692,7 @@ for (p in participants_eat_focused_P02)
   
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -862,7 +860,7 @@ for (p in participants_eat_delighted_P01)
   
   #keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -907,7 +905,7 @@ for (p in participants_eat_delighted_P02)
   
   #keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -1078,7 +1076,7 @@ for (p in participants_eat_satisfied_P01)
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -1124,7 +1122,7 @@ for (p in participants_eat_satisfied_P02)
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -1293,7 +1291,7 @@ for (p in participants_eat_amused_P01)
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -1339,7 +1337,7 @@ for (p in participants_eat_amused_P02)
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -1509,7 +1507,7 @@ for (p in participants_eat_relaxed_P01)
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -1555,7 +1553,7 @@ for (p in participants_eat_relaxed_P02)
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -1725,7 +1723,7 @@ for (p in participants_eat_confident_P01)
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -1771,7 +1769,7 @@ for (p in participants_eat_confident_P02)
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotion chunks
   
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -1940,7 +1938,7 @@ for (p in participants_eat_confused_P01)
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
   
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -1986,7 +1984,7 @@ for (p in participants_eat_confused_P02)
   #Keep a number of lines that is a multiple of max.windows.size = number of non-emotion chunks
   
   n <- nrow(data.kept)
-  data.kept <- data.kept[-((n-length(data.kept$collaborative.processes)%%max.window.size+1):n),]
+  data.kept <- data.kept[c(1:n-(n%%max.window.size)),]
   
   length(data.kept$participant)
   
@@ -2403,9 +2401,6 @@ emotions.results.bh.correction$confused_sd.emotion <- sd.emotion
 
 emotions.results.bh.correction
 ```
-
-
-
 
 ## Export
 
