@@ -1,0 +1,2418 @@
+---
+title: "EATMINT1 experiment - Sharing emotions generates online adaptative collaborative acts"
+author: "Sunny Avry"
+date: "July 17th, 2019"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+
+```{r}
+library(xlsx);library(dplyr);library(lubridate)
+```
+
+```{r}
+options(scipen=999) #remove scientific notation
+data <- read.csv2("taux_utilisation_actes.csv")
+data_eat <- data[data$eat == "Oui",]
+data_eat
+```
+
+### Global variables
+```{r}
+#window size
+max.window.size <- 5 #size of the window = number of collaborative acts per window
+max.window.size
+
+#dyad having used the emotion awareness tool (eat condition) for sharing their emotions 
+dyads_eat <- c(
+"D02",
+"D05",
+"D07",
+"D09",
+"D13",
+"D16",
+"D21",
+"D23",
+"D26",
+"D27",
+"D29")
+
+#participants in eat condition
+participants_eat <- c(
+"D02P01",
+"D02P02",
+"D05P01",
+"D05P02",
+"D07P01",
+"D07P02",
+"D09P01",
+"D09P02",
+"D13P01",
+"D13P02",
+"D16P01",
+"D16P02",
+"D21P01",
+"D21P02",
+"D23P01",
+"D23P02",
+"D26P01",
+"D26P02",
+"D27P01",
+"D27P02",
+"D29P01",
+"D29P02")
+
+#participants in no-eat condition
+participants_no_eat <- c(
+"D04P01",
+"D04P02",
+"D06P01",
+"D06P02",
+"D08P01",
+"D08P02",
+"D10P01",
+"D10P02",
+"D12P01",
+"D12P02",
+"D15P01",
+"D15P02",
+"D20P01",
+"D20P02",
+"D24P01",
+"D24P02")
+
+#emotions displayed during the collaborative problem-solving
+emotions <- c(
+"interested",
+"focused",
+"delighted",
+"satisfied",
+"confident",
+"amused",
+"relieved",
+"relaxed",
+"confused",
+"stressed",
+"dissatisfied",
+"annoyed",
+"frustrated",
+"grateful",
+"disappointed",
+"empathic",
+"bored",
+"surprised",
+"puzzled",
+"anxious",
+"impatient")
+
+#collaborative acts emitted by participants
+collaborative.processes <- c(
+"accept",
+"agree",
+"check.comprehension",
+"check.reception",
+"coordinate.teamwork",
+"disagree",
+"elicit.opinion",
+"elicit.partner.information",
+"elicit.proposition",
+"elicit.recall",
+"elicit.task.information",
+"give.explanation",
+"give.opinion.against",
+"give.opinion.for",
+"give.proposition",
+"give.recall",
+"give.self.information",
+"give.task.information",
+"incorporate",
+"manage.task",
+"other",
+"outside.activity",
+"relax.atmosphere",
+"show.active.listening",
+"show.reflection",
+"show.hostility",
+"show.solidarity",
+"tool.discourse",
+"use.social.convention")
+
+```
+## Overall statistics
+```{r}
+#total number of emotions
+overall.emotions.occurences <-  sum(data$shared.emotion != "") 
+paste("total number of emotions =",overall.emotions.occurences)
+
+#number of emotion per category
+emotions.occurences.per.category <- c()
+for (emotion in emotions){
+  emotions.occurences.per.category[emotion] <- sum(data$shared.emotion == emotion)
+}
+emotions.occurences.per.category.sorted <- sort(emotions.occurences.per.category, decreasing = TRUE)
+print("number of emotion per category: ")
+emotions.occurences.per.category.sorted
+
+#number of emotions per participant
+emotions.occurences.per.participant <- c()
+for (participant in participants_eat){
+  emotions.occurences.per.participant[participant] <- sum(data$participant == participant & data$shared.emotion != "")
+}
+emotions.occurences.per.participant.sorted <- sort(emotions.occurences.per.participant, decreasing = TRUE)
+print("number of emotion per participant: ")
+emotions.occurences.per.participant.sorted
+
+#number of emotions per category per participant
+emotions.occurences.per.category.per.participant <- data.frame(row.names = participants_eat)
+
+x <- c()
+for (i in emotions) {
+  for(j in participants_eat) {
+   x[j] <- c(sum(data$shared.emotion == i & data$participant == j))
+  }
+  emotions.occurences.per.category.per.participant[i] <- x
+}
+emotions.occurences.per.category.per.participant
+
+#averaged number of each emotion
+averaged.number.of.each.emotion <- c()
+for (i in emotions) {
+  averaged.number.of.each.emotion[i] <- mean(emotions.occurences.per.category.per.participant[,i][emotions.occurences.per.category.per.participant[,i] != 0])
+  }
+averaged.number.of.each.emotion.sorted <- sort(averaged.number.of.each.emotion, decreasing = TRUE)
+averaged.number.of.each.emotion.sorted
+
+#number of occurences of the different emotions
+number.of.occurences.for.each.emotion <- c()
+for (i in emotions) {
+  number.of.occurences.for.each.emotion[i] <- sum(emotions.occurences.per.category.per.participant[,i])
+  }
+number.of.occurences.for.each.emotion.sorted <- sort(number.of.occurences.for.each.emotion, decreasing = TRUE)
+number.of.occurences.for.each.emotion.sorted
+
+#number of participants with at least one emotion for each emotion
+participants_eat.per.emotion <- c("interested" = sum((emotions.occurences.per.category.per.participant$interested != 0) == TRUE),
+                             "focused" = sum((emotions.occurences.per.category.per.participant$focused != 0) == TRUE),
+                             "delighted" = sum((emotions.occurences.per.category.per.participant$delighted != 0) == TRUE),
+                             "satisfied" = sum((emotions.occurences.per.category.per.participant$satisfied != 0) == TRUE),
+                             "confident" = sum((emotions.occurences.per.category.per.participant$confident != 0) == TRUE),
+                             "amused" = sum((emotions.occurences.per.category.per.participant$amused != 0) == TRUE),
+                             "relieved" = sum((emotions.occurences.per.category.per.participant$relieved != 0) == TRUE),
+                             "relaxed" = sum((emotions.occurences.per.category.per.participant$relaxed != 0) == TRUE),
+                             "confused" = sum((emotions.occurences.per.category.per.participant$confused != 0) == TRUE),
+                             "stressed" = sum((emotions.occurences.per.category.per.participant$stressed != 0) == TRUE),
+                             "dissatisfied" = sum((emotions.occurences.per.category.per.participant$dissatisfied != 0) == TRUE),
+                             "annoyed" = sum((emotions.occurences.per.category.per.participant$annoyed != 0) == TRUE),
+                             "frustrated" = sum((emotions.occurences.per.category.per.participant$frustrated != 0) == TRUE),
+                             "grateful" = sum((emotions.occurences.per.category.per.participant$grateful != 0) == TRUE),
+                             "disappointed" = sum((emotions.occurences.per.category.per.participant$disappointed != 0) == TRUE),
+                             "empathic" = sum((emotions.occurences.per.category.per.participant$empathic != 0) == TRUE),
+                             "bored" = sum((emotions.occurences.per.category.per.participant$bored != 0) == TRUE),
+                             "surprised" = sum((emotions.occurences.per.category.per.participant$surprised != 0) == TRUE),
+                             "puzzled" = sum((emotions.occurences.per.category.per.participant$puzzled != 0) == TRUE),
+                             "anxious" = sum((emotions.occurences.per.category.per.participant$anxious != 0) == TRUE),
+                             "impatient" = sum((emotions.occurences.per.category.per.participant$impatient != 0) == TRUE))
+participants_eat.per.emotion.sorted <- sort(participants_eat.per.emotion, decreasing = TRUE)
+participants_eat.per.emotion.sorted
+
+#total number of collaborative acts
+overall.collaborative.processes.occurences <- length(which(data$eat == "Oui"))
+overall.collaborative.processes.occurences
+
+#number of collaborative acts per participant
+collaborative.processes.occurences.per.participant <- c()
+for (participant in participants_eat){
+  collaborative.processes.occurences.per.participant[participant] <- sum(data$participant == participant)
+}
+collaborative.processes.occurences.per.participant.sorted <- sort(collaborative.processes.occurences.per.participant, decreasing = TRUE)
+print("number of emotion per participant: ")
+collaborative.processes.occurences.per.participant.sorted
+
+#averaged number of collaborative acts
+mean(collaborative.processes.occurences.per.participant.sorted)
+sd(collaborative.processes.occurences.per.participant.sorted)
+
+#number of collaborative acts per category
+collaborative.processes.occurences.per.category <- c()
+for (i in collaborative.processes) {
+   collaborative.processes.occurences.per.category[i] <- sum(data_eat$collaborative.processes == i)
+  }
+collaborative.processes.occurences.per.category
+collaborative.processes.occurences.per.category.sorted <- sort(collaborative.processes.occurences.per.category, decreasing = TRUE)
+collaborative.processes.occurences.per.category.sorted
+sum(collaborative.processes.occurences.per.category.sorted)
+
+#averaged percentages of collaborative acts per category
+averaged.percentage.of.collaborative.processes.per.category <- sort(collaborative.processes.occurences.per.category/5141, decreasing = TRUE)
+averaged.percentage.of.collaborative.processes.per.category
+
+#duration of collaborative acts per dyad
+average.time.collaboration.per.dyad <- c()
+for (i in dyads_eat) {
+   average.time.collaboration.per.dyad[i] <- sum(data$duration[data$dyad == i])
+  }
+average.time.collaboration.per.dyad
+
+seconds_to_period(mean(average.time.collaboration.per.dyad))
+seconds_to_period(sd(average.time.collaboration.per.dyad))
+
+#number of collaborative acts per category per participant
+collaborative.processes.occurences.per.category.per.participant <- data.frame(row.names = participants_eat)
+collaborative.processes.occurences.per.category.per.participant.percentage <- data.frame(row.names = participants_eat)
+
+x <- c()
+for (i in collaborative.processes) {
+  for(j in participants_eat) {
+   x[j] <- c(sum(data$collaborative.processes == i & data$participant == j))
+  }
+  collaborative.processes.occurences.per.category.per.participant[i] <- x
+}
+collaborative.processes.occurences.per.category.per.participant
+
+x <- c()
+for (i in collaborative.processes) {
+  for(j in participants_eat) {
+   x[j] <- c(sum(data$collaborative.processes == i & data$participant == j)/sum(data$participant == j))
+  }
+  collaborative.processes.occurences.per.category.per.participant.percentage[i] <- x
+}
+collaborative.processes.occurences.per.category.per.participant.percentage
+
+```
+
+If there is not at least (max.window.size) collaborative processes following the emotion of interest -> this occurence is not taken into account for the computation of the relative use
+
+If an emotion overlaps with one another (i.e., a new same emotion) is met before (max.window.size) is reached, this latest occurence is not taken into account for the compuation of the relative use
+
+## Interested
+```{r}
+#Find cases available (participants that have shared the emotion)
+interested.cases <- c()
+
+emotion = "interested"
+for (participant in participants_eat) {
+    print(paste("Pour le participant ", participant," il y a", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondance(s)"))
+    interested.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+interested.available.cases <- interested.cases[interested.cases != 0]
+interested.available.cases
+length(interested.available.cases)
+names(interested.available.cases)
+```
+
+```{r}
+#interested sample
+participants_eat_interested_P01 <- c("D02P01","D07P01","D09P01","D13P01","D16P01","D21P01","D23P01","D26P01","D29P01")
+participants_eat_interested_P02 <- c("D02P02","D05P02","D07P02","D09P02","D13P02","D16P02","D21P02","D23P02","D27P02","D29P02")
+```
+
+```{r}
+#Compute the real-time use for the emotion interested
+
+#select the subset of collaborative processes for a given participant. For the emotion interested, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+#P02 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+interested.table.p2 <- data.frame(n)
+rownames(interested.table.p2) <- collaborative.processes
+
+for (p in participants_eat_interested_P01)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  interested.collaborative.processes.table <- data.frame(m)
+
+  interested.times <- data[which(data$participant == p & data$shared.emotion =="interested"),c("unix.time.video")]
+  interested.times.length <- length(interested.times)
+
+  for (i in seq(1:length(interested.times)))
+  {
+    interested.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > interested.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  interested.collaborative.processes.table
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(interested.collaborative.processes.table)){
+    if (anyNA(interested.collaborative.processes.table[,col])) {
+      interested.times.length <- interested.times.length-1
+      interested.collaborative.processes.table = interested.collaborative.processes.table[,!(names(interested.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(interested.collaborative.processes.table[interested.collaborative.processes.table == i])
+  }
+  x <- x/interested.times.length #number of emotion windows
+  interested.table.p2[,paste0(substr(p, 1, 5),"2")] = x
+}
+
+interested.table.p2
+
+#P01 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+interested.table.p1 <- data.frame(n)
+rownames(interested.table.p1) <- collaborative.processes
+
+for (p in participants_eat_interested_P02)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  interested.collaborative.processes.table <- data.frame(m)
+
+  interested.times <- data[which(data$participant == p & data$shared.emotion == "interested"),c("unix.time.video")]
+  interested.times.length <- length(interested.times)
+  
+  for (i in seq(1:length(interested.times)))
+  {
+    interested.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video >                                                 interested.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  interested.collaborative.processes.table
+  
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(interested.collaborative.processes.table)){
+    if (anyNA(interested.collaborative.processes.table[,col])) {
+      interested.times.length <- interested.times.length-1
+      interested.collaborative.processes.table = interested.collaborative.processes.table[,!(names(interested.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(interested.collaborative.processes.table[interested.collaborative.processes.table == i])
+  }
+  x <- x/interested.times.length #number of emotion windows
+  interested.table.p1[,paste0(substr(p, 1, 5),"1")] = x
+}
+
+interested.table.p1    
+
+interested.table <- cbind(interested.table.p1, interested.table.p2)
+interested.table
+```
+
+
+```{r}
+#Compute the real-time when no emotion interested
+
+#Select a subset of the data not including the emotion windows
+
+#P02 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.interested.table.p2 <- data.frame(n)
+rownames(non.interested.table.p2) <- collaborative.processes
+
+for (p in participants_eat_interested_P01)
+{
+  interested.times <- data[which(data$participant == p & data$shared.emotion =="interested"),c("unix.time.video")]
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(interested.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > interested.times[i])[1:max.window.size])
+  }
+  
+  #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] 
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotion windows
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of no-emotion windows
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.interested.table.p2[,paste0(substr(p, 1, 5),"2")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.interested.table.p2
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.interested.table.p1 <- data.frame(n)
+rownames(non.interested.table.p1) <- collaborative.processes
+
+for (p in participants_eat_interested_P02)
+{
+  interested.times <- data[which(data$participant == p & data$shared.emotion =="interested"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(interested.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > interested.times[i])[1:max.window.size])
+    
+  }
+  
+  #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)]
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotion windows
+  
+  print(data.kept)
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"1"),]
+  
+  #keep a number of lines that is a multiple of max.windows.size = number of no-emotion window
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.interested.table.p1[,paste0(substr(p, 1, 5),"1")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.interested.table.p1
+
+non.interested.table <- cbind(non.interested.table.p1, non.interested.table.p2)
+non.interested.table
+
+for (col in colnames(non.interested.table)){
+    print(sum(non.interested.table[,col])) 
+}
+
+sum(non.interested.table$D07P01)
+```
+
+## Focused
+
+```{r}
+#Find cases available for focused
+
+focused.cases <- c()
+
+emotion = "focused"
+for (participant in participants_eat) {
+    print(paste("Pour le participant ", participant," il y a", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondance(s)"))
+    focused.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+focused.available.cases <- focused.cases[focused.cases != 0]
+focused.available.cases
+length(focused.available.cases)
+names(focused.available.cases)
+
+```
+```{r}
+#focused sample
+participants_eat_focused_P01 <- c("D02P01","D07P01","D07P01","D09P01","D13P01","D16P01","D21P01","D23P01","D26P01","D27P01")
+participants_eat_focused_P02 <- c("D02P02","D05P02","D07P02","D09P02","D13P02","D16P02","D21P02","D23P02","D26P02","D27P02","D29P02")
+```
+
+```{r}
+#Compute the real-time use for the emotion focused
+
+#select the subset of collaborative processes for a given participant. For the emotion focused, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+#P02 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+focused.table.p2 <- data.frame(n)
+rownames(focused.table.p2) <- collaborative.processes
+
+for (p in participants_eat_focused_P01)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  focused.collaborative.processes.table <- data.frame(m)
+
+  focused.times <- data[which(data$participant == p & data$shared.emotion =="focused"),c("unix.time.video")]
+  focused.times.length <- length(focused.times)
+
+  for (i in seq(1:length(focused.times)))
+  {
+    focused.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > focused.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  focused.collaborative.processes.table
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(focused.collaborative.processes.table)){
+    if (anyNA(focused.collaborative.processes.table[,col])) {
+      focused.times.length <- focused.times.length-1
+      focused.collaborative.processes.table = focused.collaborative.processes.table[,!(names(focused.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(focused.collaborative.processes.table[focused.collaborative.processes.table == i])
+  }
+  x <- x/focused.times.length #number of emotion windows
+  focused.table.p2[,paste0(substr(p, 1, 5),"2")] = x
+}
+
+focused.table.p2
+
+#P01 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+focused.table.p1 <- data.frame(n)
+rownames(focused.table.p1) <- collaborative.processes
+
+for (p in participants_eat_focused_P02)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  focused.collaborative.processes.table <- data.frame(m)
+
+  focused.times <- data[which(data$participant == p & data$shared.emotion == "focused"),c("unix.time.video")]
+  focused.times.length <- length(focused.times)
+  
+  for (i in seq(1:length(focused.times)))
+  {
+    focused.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video >                                                 focused.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  focused.collaborative.processes.table
+  
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(focused.collaborative.processes.table)){
+    if (anyNA(focused.collaborative.processes.table[,col])) {
+      focused.times.length <- focused.times.length-1
+      focused.collaborative.processes.table = focused.collaborative.processes.table[,!(names(focused.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(focused.collaborative.processes.table[focused.collaborative.processes.table == i])
+  }
+  x <- x/focused.times.length #number of emotion windows
+  focused.table.p1[,paste0(substr(p, 1, 5),"1")] = x
+}
+
+focused.table.p1    
+
+focused.table <- cbind(focused.table.p1, focused.table.p2)
+focused.table
+```
+
+```{r}
+#Compute the real-time use when no emotion focused
+
+#Select a subset of the data not including the emotion windows
+
+#P02 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.focused.table.p2 <- data.frame(n)
+rownames(non.focused.table.p2) <- collaborative.processes
+
+for (p in participants_eat_focused_P01)
+{
+  focused.times <- data[which(data$participant == p & data$shared.emotion =="focused"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(focused.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > focused.times[i])[1:max.window.size])
+    
+  }
+  
+  #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] 
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.focused.table.p2[,paste0(substr(p, 1, 5),"2")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.focused.table.p2
+
+#P01 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.focused.table.p1 <- data.frame(n)
+rownames(non.focused.table.p1) <- collaborative.processes
+
+
+for (p in participants_eat_focused_P02)
+{
+  focused.times <- data[which(data$participant == p & data$shared.emotion =="focused"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(focused.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > focused.times[i])[1:max.window.size])
+    
+  }
+  
+  #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] 
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"1"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.focused.table.p1[,paste0(substr(p, 1, 5),"1")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.focused.table.p1
+
+non.focused.table <- cbind(non.focused.table.p1, non.focused.table.p2)
+non.focused.table
+```
+
+## Delighted
+
+```{r}
+#Find cases available for delighted
+
+delighted.cases <- c()
+
+emotion = "delighted"
+for (participant in participants_eat) {
+    print(paste("Pour le participant ", participant," il y a", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondance(s)"))
+    delighted.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+delighted.available.cases <- delighted.cases[delighted.cases != 0]
+delighted.available.cases
+length(delighted.available.cases)
+names(delighted.available.cases)
+
+```
+
+```{r}
+#delighted sample
+participants_eat_delighted_P01 <- c("D02P01","D05P01","D09P01","D26P01","D27P01","D29P01")
+participants_eat_delighted_P02 <- c("D09P02","D13P02","D21P02","D27P02","D29P02")
+```
+
+```{r}
+#Compute the real-time use for the emotion delighted
+
+#select the subset of collaborative processes for a given participant. For the emotion delighted, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+#P02 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+delighted.table.p2 <- data.frame(n)
+rownames(delighted.table.p2) <- collaborative.processes
+
+for (p in participants_eat_delighted_P01)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  delighted.collaborative.processes.table <- data.frame(m)
+
+  delighted.times <- data[which(data$participant == p & data$shared.emotion =="delighted"),c("unix.time.video")]
+  delighted.times.length <- length(delighted.times)
+
+  for (i in seq(1:length(delighted.times)))
+  {
+    delighted.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > delighted.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  delighted.collaborative.processes.table
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(delighted.collaborative.processes.table)){
+    if (anyNA(delighted.collaborative.processes.table[,col])) {
+      delighted.times.length <- delighted.times.length-1
+      delighted.collaborative.processes.table = delighted.collaborative.processes.table[,!(names(delighted.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(delighted.collaborative.processes.table[delighted.collaborative.processes.table == i])
+  }
+  x <- x/delighted.times.length #number of emotion windows
+  delighted.table.p2[,paste0(substr(p, 1, 5),"2")] = x
+}
+
+delighted.table.p2
+
+#P01 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+delighted.table.p1 <- data.frame(n)
+rownames(delighted.table.p1) <- collaborative.processes
+
+for (p in participants_eat_delighted_P02)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  delighted.collaborative.processes.table <- data.frame(m)
+
+  delighted.times <- data[which(data$participant == p & data$shared.emotion == "delighted"),c("unix.time.video")]
+  delighted.times.length <- length(delighted.times)
+  
+  for (i in seq(1:length(delighted.times)))
+  {
+    delighted.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video >                                                 delighted.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  delighted.collaborative.processes.table
+  
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(delighted.collaborative.processes.table)){
+    if (anyNA(delighted.collaborative.processes.table[,col])) {
+      delighted.times.length <- delighted.times.length-1
+      delighted.collaborative.processes.table = delighted.collaborative.processes.table[,!(names(delighted.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(delighted.collaborative.processes.table[delighted.collaborative.processes.table == i])
+  }
+  x <- x/delighted.times.length #number of emotion windows
+  delighted.table.p1[,paste0(substr(p, 1, 5),"1")] = x
+}
+
+delighted.table.p1    
+
+delighted.table <- cbind(delighted.table.p1, delighted.table.p2)
+delighted.table
+```
+
+```{r}
+#Compute the real-time use when no emotion delighted
+
+#Select a subset of the data not including the emotional collaborative processes that are emitted just after the emotion of interest
+
+#P02 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.delighted.table.p2 <- data.frame(n)
+rownames(non.delighted.table.p2) <- collaborative.processes
+
+for (p in participants_eat_delighted_P01)
+{
+  delighted.times <- data[which(data$participant == p & data$shared.emotion =="delighted"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(delighted.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > delighted.times[i])[1:max.window.size])
+    
+  }
+  
+  #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] 
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
+  
+  #keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.delighted.table.p2[,paste0(substr(p, 1, 5),"2")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.delighted.table.p2
+
+#P01 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.delighted.table.p1 <- data.frame(n)
+rownames(non.delighted.table.p1) <- collaborative.processes
+
+
+for (p in participants_eat_delighted_P02)
+{
+  delighted.times <- data[which(data$participant == p & data$shared.emotion =="delighted"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(delighted.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > delighted.times[i])[1:max.window.size])
+    
+  }
+  
+  #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] 
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"1"),]
+  
+  #keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.delighted.table.p1[,paste0(substr(p, 1, 5),"1")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.delighted.table.p1
+
+non.delighted.table <- cbind(non.delighted.table.p1, non.delighted.table.p2)
+non.delighted.table
+```
+
+## Satisfied
+
+```{r}
+#Find cases available for satisfied
+
+satisfied.cases <- c()
+
+emotion = "satisfied"
+for (participant in participants_eat) {
+    print(paste("Pour le participant ", participant," il y a", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondance(s)"))
+    satisfied.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+satisfied.available.cases <- satisfied.cases[satisfied.cases != 0]
+satisfied.available.cases
+length(satisfied.available.cases)
+names(satisfied.available.cases)
+
+```
+
+```{r}
+#satisfied sample
+participants_eat_satisfied_P01 <- c("D02P01","D05P01","D09P01","D16P01","D21P01","D23P01","D26P01","D29P01")
+participants_eat_satisfied_P02 <- c("D02P02","D09P02","D13P02","D16P02","D21P02","D26P02","D27P02","D29P02")
+```
+
+
+```{r}
+#Compute the real-time use for the emotion satisfied
+
+#select the subset of collaborative processes for a given participant. For the emotion satisfied, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+#P02 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+satisfied.table.p2 <- data.frame(n)
+rownames(satisfied.table.p2) <- collaborative.processes
+
+for (p in participants_eat_satisfied_P01)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  satisfied.collaborative.processes.table <- data.frame(m)
+
+  satisfied.times <- data[which(data$participant == p & data$shared.emotion =="satisfied"),c("unix.time.video")]
+  satisfied.times.length <- length(satisfied.times)
+
+  for (i in seq(1:length(satisfied.times)))
+  {
+    satisfied.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > satisfied.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  satisfied.collaborative.processes.table
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(satisfied.collaborative.processes.table)){
+    if (anyNA(satisfied.collaborative.processes.table[,col])) {
+      satisfied.times.length <- satisfied.times.length-1
+      satisfied.collaborative.processes.table = satisfied.collaborative.processes.table[,!(names(satisfied.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(satisfied.collaborative.processes.table[satisfied.collaborative.processes.table == i])
+  }
+  x <- x/satisfied.times.length #number of emotion windows
+  satisfied.table.p2[,paste0(substr(p, 1, 5),"2")] = x
+}
+
+satisfied.table.p2
+
+#P01 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+satisfied.table.p1 <- data.frame(n)
+rownames(satisfied.table.p1) <- collaborative.processes
+
+for (p in participants_eat_satisfied_P02)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  satisfied.collaborative.processes.table <- data.frame(m)
+
+  satisfied.times <- data[which(data$participant == p & data$shared.emotion == "satisfied"),c("unix.time.video")]
+  satisfied.times.length <- length(satisfied.times)
+  
+  for (i in seq(1:length(satisfied.times)))
+  {
+    satisfied.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video >                                                 satisfied.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  satisfied.collaborative.processes.table
+  
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(satisfied.collaborative.processes.table)){
+    if (anyNA(satisfied.collaborative.processes.table[,col])) {
+      satisfied.times.length <- satisfied.times.length-1
+      satisfied.collaborative.processes.table = satisfied.collaborative.processes.table[,!(names(satisfied.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(satisfied.collaborative.processes.table[satisfied.collaborative.processes.table == i])
+  }
+  x <- x/satisfied.times.length #number of emotion windows
+  satisfied.table.p1[,paste0(substr(p, 1, 5),"1")] = x
+}
+
+satisfied.table.p1    
+
+satisfied.table <- cbind(satisfied.table.p1, satisfied.table.p2)
+satisfied.table
+```
+
+```{r}
+#Compute the relative use when no emotion satisfied
+
+#Select a subset of the data not including the emotional collaborative processes that are emitted just after the emotion of interest
+
+#results for P02 participants_eat
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.satisfied.table.p2 <- data.frame(n)
+rownames(non.satisfied.table.p2) <- collaborative.processes
+
+for (p in participants_eat_satisfied_P01)
+{
+  satisfied.times <- data[which(data$participant == p & data$shared.emotion =="satisfied"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(satisfied.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > satisfied.times[i])[1:max.window.size])
+    
+  }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.satisfied.table.p2[,paste0(substr(p, 1, 5),"2")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.satisfied.table.p2
+
+#results for P01 participants_eat
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.satisfied.table.p1 <- data.frame(n)
+rownames(non.satisfied.table.p1) <- collaborative.processes
+
+
+for (p in participants_eat_satisfied_P02)
+{
+  satisfied.times <- data[which(data$participant == p & data$shared.emotion =="satisfied"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(satisfied.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > satisfied.times[i])[1:max.window.size])
+    
+  }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"1"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.satisfied.table.p1[,paste0(substr(p, 1, 5),"1")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.satisfied.table.p1
+
+non.satisfied.table <- cbind(non.satisfied.table.p1, non.satisfied.table.p2)
+non.satisfied.table
+```
+
+## Amused
+
+```{r}
+#Find cases available for amused
+
+amused.cases <- c()
+
+emotion = "amused"
+for (participant in participants_eat) {
+    print(paste("Pour le participant ", participant," il y a", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondance(s)"))
+    amused.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+amused.available.cases <- amused.cases[amused.cases != 0]
+amused.available.cases
+length(amused.available.cases)
+names(amused.available.cases)
+
+```
+```{r}
+#amused sample
+participants_eat_amused_P01 <- c("D02P01","D05P01","D07P01","D09P01","D13P01","D16P01","D21P01","D23P01","D26P01","D27P01","D29P01")
+participants_eat_amused_P02 <- c("D07P02","D09P02","D13P02","D21P02","D23P02","D26P02","D27P02")
+```
+
+```{r}
+#Compute the real-time use for the emotion amused
+
+#select the subset of collaborative processes for a given participant. For the emotion amused, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+#P02 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+amused.table.p2 <- data.frame(n)
+rownames(amused.table.p2) <- collaborative.processes
+
+for (p in participants_eat_amused_P01)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  amused.collaborative.processes.table <- data.frame(m)
+
+  amused.times <- data[which(data$participant == p & data$shared.emotion =="amused"),c("unix.time.video")]
+  amused.times.length <- length(amused.times)
+
+  for (i in seq(1:length(amused.times)))
+  {
+    amused.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > amused.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  amused.collaborative.processes.table
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(amused.collaborative.processes.table)){
+    if (anyNA(amused.collaborative.processes.table[,col])) {
+      amused.times.length <- amused.times.length-1
+      amused.collaborative.processes.table = amused.collaborative.processes.table[,!(names(amused.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(amused.collaborative.processes.table[amused.collaborative.processes.table == i])
+  }
+  x <- x/amused.times.length #number of emotion windows
+  amused.table.p2[,paste0(substr(p, 1, 5),"2")] = x
+}
+
+amused.table.p2
+
+#P01 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+amused.table.p1 <- data.frame(n)
+rownames(amused.table.p1) <- collaborative.processes
+
+for (p in participants_eat_amused_P02)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  amused.collaborative.processes.table <- data.frame(m)
+
+  amused.times <- data[which(data$participant == p & data$shared.emotion == "amused"),c("unix.time.video")]
+  amused.times.length <- length(amused.times)
+  
+  for (i in seq(1:length(amused.times)))
+  {
+    amused.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video >                                                 amused.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  amused.collaborative.processes.table
+  
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(amused.collaborative.processes.table)){
+    if (anyNA(amused.collaborative.processes.table[,col])) {
+      amused.times.length <- amused.times.length-1
+      amused.collaborative.processes.table = amused.collaborative.processes.table[,!(names(amused.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(amused.collaborative.processes.table[amused.collaborative.processes.table == i])
+  }
+  x <- x/amused.times.length #number of emotion windows
+  amused.table.p1[,paste0(substr(p, 1, 5),"1")] = x
+}
+
+amused.table.p1    
+
+amused.table <- cbind(amused.table.p1, amused.table.p2)
+amused.table
+```
+
+```{r}
+#Compute the relative use when no emotion amused
+
+#Select a subset of the data not including the emotional collaborative processes that are emitted just after the emotion of interest
+
+#results for P02 participants_eat
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.amused.table.p2 <- data.frame(n)
+rownames(non.amused.table.p2) <- collaborative.processes
+
+for (p in participants_eat_amused_P01)
+{
+  amused.times <- data[which(data$participant == p & data$shared.emotion =="amused"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(amused.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > amused.times[i])[1:max.window.size])
+    
+  }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.amused.table.p2[,paste0(substr(p, 1, 5),"2")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.amused.table.p2
+
+#results for P01 participants_eat
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.amused.table.p1 <- data.frame(n)
+rownames(non.amused.table.p1) <- collaborative.processes
+
+
+for (p in participants_eat_amused_P02)
+{
+  amused.times <- data[which(data$participant == p & data$shared.emotion =="amused"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(amused.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > amused.times[i])[1:max.window.size])
+    
+  }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"1"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.amused.table.p1[,paste0(substr(p, 1, 5),"1")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.amused.table.p1
+
+non.amused.table <- cbind(non.amused.table.p1, non.amused.table.p2)
+non.amused.table
+```
+
+## Relaxed
+
+```{r}
+#Find cases available for relaxed, i.e., the participants for which one or more sharing of relaxed occured
+
+relaxed.cases <- c()
+
+emotion = "relaxed"
+for (participant in participants_eat) {
+    print(paste("Pour le participant ", participant," il y a", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondance(s)"))
+    relaxed.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+relaxed.available.cases <- relaxed.cases[relaxed.cases != 0]
+relaxed.available.cases
+length(relaxed.available.cases)
+names(relaxed.available.cases)
+
+```
+
+```{r}
+#relaxed sample
+participants_eat_relaxed_P01 <- c("D05P01","D07P01","D09P01","D21P01","D23P01","D27P01")
+participants_eat_relaxed_P02 <- c("D05P02","D09P02","D16P02","D21P02","D26P02","D27P02")
+```
+
+```{r}
+#Compute the real-time use for the emotion relaxed
+
+#select the subset of collaborative processes for a given participant. For the emotion relaxed, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+#P02 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+relaxed.table.p2 <- data.frame(n)
+rownames(relaxed.table.p2) <- collaborative.processes
+
+for (p in participants_eat_relaxed_P01)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  relaxed.collaborative.processes.table <- data.frame(m)
+
+  relaxed.times <- data[which(data$participant == p & data$shared.emotion =="relaxed"),c("unix.time.video")]
+  relaxed.times.length <- length(relaxed.times)
+
+  for (i in seq(1:length(relaxed.times)))
+  {
+    relaxed.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > relaxed.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  relaxed.collaborative.processes.table
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(relaxed.collaborative.processes.table)){
+    if (anyNA(relaxed.collaborative.processes.table[,col])) {
+      relaxed.times.length <- relaxed.times.length-1
+      relaxed.collaborative.processes.table = relaxed.collaborative.processes.table[,!(names(relaxed.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(relaxed.collaborative.processes.table[relaxed.collaborative.processes.table == i])
+  }
+  x <- x/relaxed.times.length #number of emotion windows
+  relaxed.table.p2[,paste0(substr(p, 1, 5),"2")] = x
+}
+
+relaxed.table.p2
+
+#P01 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+relaxed.table.p1 <- data.frame(n)
+rownames(relaxed.table.p1) <- collaborative.processes
+
+for (p in participants_eat_relaxed_P02)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  relaxed.collaborative.processes.table <- data.frame(m)
+
+  relaxed.times <- data[which(data$participant == p & data$shared.emotion == "relaxed"),c("unix.time.video")]
+  relaxed.times.length <- length(relaxed.times)
+  
+  for (i in seq(1:length(relaxed.times)))
+  {
+    relaxed.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video >                                                 relaxed.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  relaxed.collaborative.processes.table
+  
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(relaxed.collaborative.processes.table)){
+    if (anyNA(relaxed.collaborative.processes.table[,col])) {
+      relaxed.times.length <- relaxed.times.length-1
+      relaxed.collaborative.processes.table = relaxed.collaborative.processes.table[,!(names(relaxed.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(relaxed.collaborative.processes.table[relaxed.collaborative.processes.table == i])
+  }
+  x <- x/relaxed.times.length #number of emotion windows
+  relaxed.table.p1[,paste0(substr(p, 1, 5),"1")] = x
+}
+
+relaxed.table.p1    
+
+relaxed.table <- cbind(relaxed.table.p1, relaxed.table.p2)
+relaxed.table
+```
+
+```{r}
+#Compute the relative use when no emotion relaxed
+
+#Select a subset of the data not including the emotional collaborative processes that are emitted just after the emotion of interest
+
+#results for P02 participants_eat
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.relaxed.table.p2 <- data.frame(n)
+rownames(non.relaxed.table.p2) <- collaborative.processes
+
+for (p in participants_eat_relaxed_P01)
+{
+  relaxed.times <- data[which(data$participant == p & data$shared.emotion =="relaxed"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(relaxed.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > relaxed.times[i])[1:max.window.size])
+    
+  }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.relaxed.table.p2[,paste0(substr(p, 1, 5),"2")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.relaxed.table.p2
+
+#results for P01 participants_eat
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.relaxed.table.p1 <- data.frame(n)
+rownames(non.relaxed.table.p1) <- collaborative.processes
+
+
+for (p in participants_eat_relaxed_P02)
+{
+  relaxed.times <- data[which(data$participant == p & data$shared.emotion =="relaxed"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(relaxed.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > relaxed.times[i])[1:max.window.size])
+    
+  }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"1"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.relaxed.table.p1[,paste0(substr(p, 1, 5),"1")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.relaxed.table.p1
+
+non.relaxed.table <- cbind(non.relaxed.table.p1, non.relaxed.table.p2)
+non.relaxed.table
+```
+
+## Confident
+
+```{r}
+#Find cases available for confident, i.e., the participants for which one or more sharing of confident occured
+
+confident.cases <- c()
+
+emotion = "confident"
+for (participant in participants_eat) {
+    print(paste("Pour le participant ", participant," il y a", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondance(s)"))
+    confident.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+confident.available.cases <- confident.cases[confident.cases != 0]
+confident.available.cases
+length(confident.available.cases)
+names(confident.available.cases)
+
+```
+
+```{r}
+#confident sample
+participants_eat_confident_P01 <- c("D09P01","D16P01","D26P01","D27P01","D29P01")
+participants_eat_confident_P02 <- c("D02P02","D05P02","D16P02","D26P02")
+```
+
+```{r}
+#Compute the real-time use for the emotion confident
+
+#select the subset of collaborative processes for a given participant. For the emotion confident, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+#P02 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+confident.table.p2 <- data.frame(n)
+rownames(confident.table.p2) <- collaborative.processes
+
+for (p in participants_eat_confident_P01)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  confident.collaborative.processes.table <- data.frame(m)
+
+  confident.times <- data[which(data$participant == p & data$shared.emotion =="confident"),c("unix.time.video")]
+  confident.times.length <- length(confident.times)
+
+  for (i in seq(1:length(confident.times)))
+  {
+    confident.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > confident.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  confident.collaborative.processes.table
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(confident.collaborative.processes.table)){
+    if (anyNA(confident.collaborative.processes.table[,col])) {
+      confident.times.length <- confident.times.length-1
+      confident.collaborative.processes.table = confident.collaborative.processes.table[,!(names(confident.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(confident.collaborative.processes.table[confident.collaborative.processes.table == i])
+  }
+  x <- x/confident.times.length #number of emotion windows
+  confident.table.p2[,paste0(substr(p, 1, 5),"2")] = x
+}
+
+confident.table.p2
+
+#P01 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+confident.table.p1 <- data.frame(n)
+rownames(confident.table.p1) <- collaborative.processes
+
+for (p in participants_eat_confident_P02)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  confident.collaborative.processes.table <- data.frame(m)
+
+  confident.times <- data[which(data$participant == p & data$shared.emotion == "confident"),c("unix.time.video")]
+  confident.times.length <- length(confident.times)
+  
+  for (i in seq(1:length(confident.times)))
+  {
+    confident.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video >                                                 confident.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  confident.collaborative.processes.table
+  
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(confident.collaborative.processes.table)){
+    if (anyNA(confident.collaborative.processes.table[,col])) {
+      confident.times.length <- confident.times.length-1
+      confident.collaborative.processes.table = confident.collaborative.processes.table[,!(names(confident.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(confident.collaborative.processes.table[confident.collaborative.processes.table == i])
+  }
+  x <- x/confident.times.length #number of emotion windows
+  confident.table.p1[,paste0(substr(p, 1, 5),"1")] = x
+}
+
+confident.table.p1    
+
+confident.table <- cbind(confident.table.p1, confident.table.p2)
+confident.table
+```
+
+```{r}
+#Compute the relative use when no emotion confident
+
+#Select a subset of the data not including the emotional collaborative processes that are emitted just after the emotion of interest
+
+#results for P02 participants_eat
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.confident.table.p2 <- data.frame(n)
+rownames(non.confident.table.p2) <- collaborative.processes
+
+for (p in participants_eat_confident_P01)
+{
+  confident.times <- data[which(data$participant == p & data$shared.emotion =="confident"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(confident.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > confident.times[i])[1:max.window.size])
+    
+  }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.confident.table.p2[,paste0(substr(p, 1, 5),"2")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.confident.table.p2
+
+#results for P01 participants_eat
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.confident.table.p1 <- data.frame(n)
+rownames(non.confident.table.p1) <- collaborative.processes
+
+
+for (p in participants_eat_confident_P02)
+{
+  confident.times <- data[which(data$participant == p & data$shared.emotion =="confident"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(confident.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > confident.times[i])[1:max.window.size])
+    
+  }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"1"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotion chunks
+  
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.confident.table.p1[,paste0(substr(p, 1, 5),"1")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.confident.table.p1
+
+non.confident.table <- cbind(non.confident.table.p1, non.confident.table.p2)
+non.confident.table
+```
+## Confused
+
+```{r}
+#Find cases available for confused, i.e., the participants for which one or more sharing of confused occured
+
+confused.cases <- c()
+
+emotion = "confused"
+for (participant in participants_eat) {
+    print(paste("Pour le participant ", participant," il y a", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondance(s)"))
+    confused.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+confused.available.cases <- confused.cases[confused.cases != 0]
+confused.available.cases
+length(confused.available.cases)
+names(confused.available.cases)
+```
+
+```{r}
+#confused sample
+participants_eat_confused_P01 <- c("D05P01","D07P01","D13P01","D29P01")
+participants_eat_confused_P02 <- c("D07P02","D26P02")
+```
+
+
+```{r}
+#Compute the real-time use for the emotion confused
+
+#select the subset of collaborative processes for a given participant. For the emotion confused, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+#P02 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+confused.table.p2 <- data.frame(n)
+rownames(confused.table.p2) <- collaborative.processes
+
+for (p in participants_eat_confused_P01)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  confused.collaborative.processes.table <- data.frame(m)
+
+  confused.times <- data[which(data$participant == p & data$shared.emotion =="confused"),c("unix.time.video")]
+  confused.times.length <- length(confused.times)
+
+  for (i in seq(1:length(confused.times)))
+  {
+    confused.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > confused.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  confused.collaborative.processes.table
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(confused.collaborative.processes.table)){
+    if (anyNA(confused.collaborative.processes.table[,col])) {
+      confused.times.length <- confused.times.length-1
+      confused.collaborative.processes.table = confused.collaborative.processes.table[,!(names(confused.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(confused.collaborative.processes.table[confused.collaborative.processes.table == i])
+  }
+  x <- x/confused.times.length #number of emotion windows
+  confused.table.p2[,paste0(substr(p, 1, 5),"2")] = x
+}
+
+confused.table.p2
+
+#P01 participants
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+confused.table.p1 <- data.frame(n)
+rownames(confused.table.p1) <- collaborative.processes
+
+for (p in participants_eat_confused_P02)
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+  confused.collaborative.processes.table <- data.frame(m)
+
+  confused.times <- data[which(data$participant == p & data$shared.emotion == "confused"),c("unix.time.video")]
+  confused.times.length <- length(confused.times)
+  
+  for (i in seq(1:length(confused.times)))
+  {
+    confused.collaborative.processes.table[,paste0("occurence",i)] <- data[which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video >                                                 confused.times[i]),c("collaborative.processes")][1:max.window.size] 
+  }
+
+  confused.collaborative.processes.table
+  
+  #check if the emotion windows all have a length of max.window.size
+  #when it is not the case, the emotion window is removed
+  for (col in colnames(confused.collaborative.processes.table)){
+    if (anyNA(confused.collaborative.processes.table[,col])) {
+      confused.times.length <- confused.times.length-1
+      confused.collaborative.processes.table = confused.collaborative.processes.table[,!(names(confused.collaborative.processes.table) %in% c(col))]
+    }
+  }
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(confused.collaborative.processes.table[confused.collaborative.processes.table == i])
+  }
+  x <- x/confused.times.length #number of emotion windows
+  confused.table.p1[,paste0(substr(p, 1, 5),"1")] = x
+}
+
+confused.table.p1    
+
+confused.table <- cbind(confused.table.p1, confused.table.p2)
+confused.table
+```
+
+```{r}
+#Compute the relative use when no emotion confused
+
+#Select a subset of the data not including the emotional collaborative processes that are emitted just after the emotion of interest
+
+#results for P02 participants_eat
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.confused.table.p2 <- data.frame(n)
+rownames(non.confused.table.p2) <- collaborative.processes
+
+for (p in participants_eat_confused_P01)
+{
+  confused.times <- data[which(data$participant == p & data$shared.emotion =="confused"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(confused.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"2") & data$unix.time.video > confused.times[i])[1:max.window.size])
+    
+  }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"2"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotional chunks
+  
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.confused.table.p2[,paste0(substr(p, 1, 5),"2")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.confused.table.p2
+
+#results for P01 participants_eat
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.confused.table.p1 <- data.frame(n)
+rownames(non.confused.table.p1) <- collaborative.processes
+
+
+for (p in participants_eat_confused_P02)
+{
+  confused.times <- data[which(data$participant == p & data$shared.emotion =="confused"),c("unix.time.video")]
+  
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(confused.times)))
+  {
+    to.be.dropped <- c(to.be.dropped, which(data$participant == paste0(substr(p, 1, 5),"1") & data$unix.time.video > confused.times[i])[1:max.window.size])
+    
+  }
+  
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)] #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  
+  data.kept <- data[-to.be.dropped,] #data.kept is the data without emotional chunks
+  
+  data.kept <- data.kept[data.kept$participant == paste0(substr(p, 1, 5),"1"),]
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of non-emotion chunks
+  
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+    }
+  
+  non.confused.table.p1[,paste0(substr(p, 1, 5),"1")] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.confused.table.p1
+
+non.confused.table <- cbind(non.confused.table.p1, non.confused.table.p2)
+non.confused.table
+```
+
+##Wilcoxon tests
+
+```{r}
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+emotions.results <- data.frame(n)
+rownames(emotions.results) <- collaborative.processes
+
+#interested
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(interested.table[process,]),t(non.interested.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.interested.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(interested.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.interested.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(interested.table[process,])))
+   
+   
+  }
+
+emotions.results$interested_p.value <- results
+emotions.results$interested_mean.no.emotion <- mean.no.emotion
+emotions.results$interested_mean.emotion <- mean.emotion
+emotions.results$interested_sd.no.emotion <- sd.no.emotion
+emotions.results$interested_sd.emotion <- sd.emotion
+
+#focused
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(focused.table[process,]),t(non.focused.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.focused.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(focused.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.focused.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(focused.table[process,])))
+   
+   
+  }
+
+emotions.results$focused_p.value <- results
+emotions.results$focused_mean.no.emotion <- mean.no.emotion
+emotions.results$focused_mean.emotion <- mean.emotion
+emotions.results$focused_sd.no.emotion <- sd.no.emotion
+emotions.results$focused_sd.emotion <- sd.emotion
+
+#delighted
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(delighted.table[process,]),t(non.delighted.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.delighted.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(delighted.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.delighted.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(delighted.table[process,])))
+   
+   
+  }
+
+emotions.results$delighted_p.value <- results
+emotions.results$delighted_mean.no.emotion <- mean.no.emotion
+emotions.results$delighted_mean.emotion <- mean.emotion
+emotions.results$delighted_sd.no.emotion <- sd.no.emotion
+emotions.results$delighted_sd.emotion <- sd.emotion
+
+#satisfied
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(satisfied.table[process,]),t(non.satisfied.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.satisfied.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(satisfied.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.satisfied.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(satisfied.table[process,])))
+   
+  }
+
+emotions.results$satisfied_p.value <- results
+emotions.results$satisfied_mean.no.emotion <- mean.no.emotion
+emotions.results$satisfied_mean.emotion <- mean.emotion
+emotions.results$satisfied_sd.no.emotion <- sd.no.emotion
+emotions.results$satisfied_sd.emotion <- sd.emotion
+
+#amused
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(amused.table[process,]),t(non.amused.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.amused.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(amused.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.amused.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(amused.table[process,])))
+   
+  }
+
+emotions.results$amused_p.value <- results
+emotions.results$amused_mean.no.emotion <- mean.no.emotion
+emotions.results$amused_mean.emotion <- mean.emotion
+emotions.results$amused_sd.no.emotion <- sd.no.emotion
+emotions.results$amused_sd.emotion <- sd.emotion
+
+#relaxed
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(relaxed.table[process,]),t(non.relaxed.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.relaxed.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(relaxed.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.relaxed.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(relaxed.table[process,])))
+   
+   
+  }
+
+emotions.results$relaxed_p.value <- results
+emotions.results$relaxed_mean.no.emotion <- mean.no.emotion
+emotions.results$relaxed_mean.emotion <- mean.emotion
+emotions.results$relaxed_sd.no.emotion <- sd.no.emotion
+emotions.results$relaxed_sd.emotion <- sd.emotion
+
+#confident
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(confident.table[process,]),t(non.confident.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.confident.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(confident.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.confident.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(confident.table[process,])))
+  }
+
+emotions.results$confident_p.value <- results
+emotions.results$confident_mean.no.emotion <- mean.no.emotion
+emotions.results$confident_mean.emotion <- mean.emotion
+emotions.results$confident_sd.no.emotion <- sd.no.emotion
+emotions.results$confident_sd.emotion <- sd.emotion
+
+#confused
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(confused.table[process,]),t(non.confused.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.confused.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(confused.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.confused.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(confused.table[process,])))
+   
+  }
+
+emotions.results$confused_p.value <- results
+emotions.results$confused_mean.no.emotion <- mean.no.emotion
+emotions.results$confused_mean.emotion <- mean.emotion
+emotions.results$confused_sd.no.emotion <- sd.no.emotion
+emotions.results$confused_sd.emotion <- sd.emotion
+
+
+emotions.results$interested_p.value
+
+```
+
+## Wilcoxon tests with Benjamini-Hochberg correction
+
+```{r}
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+emotions.results.bh.correction <- data.frame(n)
+rownames(emotions.results.bh.correction) <- collaborative.processes
+
+#interested
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(interested.table[process,]),t(non.interested.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.interested.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(interested.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.interested.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(interested.table[process,])))
+   
+   
+  }
+
+emotions.results.bh.correction$interested_p.value <- p.adjust(results, method="BH")
+emotions.results.bh.correction$interested_mean.no.emotion <- mean.no.emotion
+emotions.results.bh.correction$interested_mean.emotion <- mean.emotion
+emotions.results.bh.correction$interested_sd.no.emotion <- sd.no.emotion
+emotions.results.bh.correction$interested_sd.emotion <- sd.emotion
+
+#focused
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(focused.table[process,]),t(non.focused.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.focused.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(focused.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.focused.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(focused.table[process,])))
+   
+   
+  }
+
+emotions.results.bh.correction$focused_p.value <- p.adjust(results, method="BH")
+emotions.results.bh.correction$focused_mean.no.emotion <- mean.no.emotion
+emotions.results.bh.correction$focused_mean.emotion <- mean.emotion
+emotions.results.bh.correction$focused_sd.no.emotion <- sd.no.emotion
+emotions.results.bh.correction$focused_sd.emotion <- sd.emotion
+
+#delighted
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(delighted.table[process,]),t(non.delighted.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.delighted.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(delighted.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.delighted.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(delighted.table[process,])))
+   
+   
+  }
+
+emotions.results.bh.correction$delighted_p.value <- p.adjust(results, method="BH")
+emotions.results.bh.correction$delighted_mean.no.emotion <- mean.no.emotion
+emotions.results.bh.correction$delighted_mean.emotion <- mean.emotion
+emotions.results.bh.correction$delighted_sd.no.emotion <- sd.no.emotion
+emotions.results.bh.correction$delighted_sd.emotion <- sd.emotion
+
+#satisfied
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(satisfied.table[process,]),t(non.satisfied.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.satisfied.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(satisfied.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.satisfied.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(satisfied.table[process,])))
+   
+  }
+
+emotions.results.bh.correction$satisfied_p.value <- p.adjust(results, method="BH")
+emotions.results.bh.correction$satisfied_mean.no.emotion <- mean.no.emotion
+emotions.results.bh.correction$satisfied_mean.emotion <- mean.emotion
+emotions.results.bh.correction$satisfied_sd.no.emotion <- sd.no.emotion
+emotions.results.bh.correction$satisfied_sd.emotion <- sd.emotion
+
+#amused
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(amused.table[process,]),t(non.amused.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.amused.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(amused.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.amused.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(amused.table[process,])))
+   
+  }
+
+emotions.results.bh.correction$amused_p.value <- p.adjust(results, method="BH")
+emotions.results.bh.correction$amused_mean.no.emotion <- mean.no.emotion
+emotions.results.bh.correction$amused_mean.emotion <- mean.emotion
+emotions.results.bh.correction$amused_sd.no.emotion <- sd.no.emotion
+emotions.results.bh.correction$amused_sd.emotion <- sd.emotion
+
+#relaxed
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(relaxed.table[process,]),t(non.relaxed.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.relaxed.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(relaxed.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.relaxed.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(relaxed.table[process,])))
+   
+   
+  }
+
+emotions.results.bh.correction$relaxed_p.value <- p.adjust(results, method="BH")
+emotions.results.bh.correction$relaxed_mean.no.emotion <- mean.no.emotion
+emotions.results.bh.correction$relaxed_mean.emotion <- mean.emotion
+emotions.results.bh.correction$relaxed_sd.no.emotion <- sd.no.emotion
+emotions.results.bh.correction$relaxed_sd.emotion <- sd.emotion
+
+#confident
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(confident.table[process,]),t(non.confident.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.confident.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(confident.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.confident.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(confident.table[process,])))
+  }
+
+emotions.results.bh.correction$confident_p.value <- p.adjust(results, method="BH")
+emotions.results.bh.correction$confident_mean.no.emotion <- mean.no.emotion
+emotions.results.bh.correction$confident_mean.emotion <- mean.emotion
+emotions.results.bh.correction$confident_sd.no.emotion <- sd.no.emotion
+emotions.results.bh.correction$confident_sd.emotion <- sd.emotion
+
+#confused
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+ for (process in collaborative.processes)
+   {
+   
+   results <- c(results, wilcox.test(t(confused.table[process,]),t(non.confused.table[process,]))$p.value)
+   mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.confused.table[process,])))
+   mean.emotion <- c(mean.emotion,mean(as.numeric(confused.table[process,])))
+   sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.confused.table[process,])))
+   sd.emotion <- c(sd.emotion,sd(as.numeric(confused.table[process,])))
+   
+  }
+
+emotions.results.bh.correction$confused_p.value <- p.adjust(results, method="BH")
+emotions.results.bh.correction$confused_mean.no.emotion <- mean.no.emotion
+emotions.results.bh.correction$confused_mean.emotion <- mean.emotion
+emotions.results.bh.correction$confused_sd.no.emotion <- sd.no.emotion
+emotions.results.bh.correction$confused_sd.emotion <- sd.emotion
+
+emotions.results.bh.correction
+```
+
+## Export
+
+```{r}
+#Exporting results in .xlsx file
+
+write.xlsx(emotions.results, paste0("results",toString(max.window.size),".xlsx")) 
+
+#Exporting results in .xlsx file
+
+write.xlsx(emotions.results.bh.correction, paste0("results",toString(max.window.size),"_bh_correction.xlsx"))
+
+```
+
+
+
+
