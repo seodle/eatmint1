@@ -1,3 +1,3 @@
-# eatmint1
+# EATMINT1
 
-Resources and code relating to the fist experiment of the EATMINT Project : https://www.unige.ch/cisa/eatmint/
+This repository contains various scripts used in the concepton of the first experiment of the eatmint project : https://www.unige.ch/cisa/eatmint/.
