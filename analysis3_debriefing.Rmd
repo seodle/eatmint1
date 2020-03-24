@@ -1,0 +1,188 @@
+---
+title: "<b> EATMINT1 - Sharing emotions generates online adaptative collaborative acts<br></b>"
+subtitle: "<b>Analysis 3 : debriefing emotions</b>"
+author: "Sunny Avry"
+date: "March 24th, 2020"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+  toc: TRUE
+---
+
+<style type="text/css">
+
+h1.title {
+  font-size: 30px;
+}
+</style>
+
+## Libraries
+```{r}
+library("ggpubr")
+```
+
+
+## Data import
+```{r}
+#import tables
+donneesEAT=read.table("dataEmotionsEAT.txt",header=F,sep=",", dec=".", fill=T, blank.lines.skip=F);head(donneesEAT)
+donneesDebriefing=read.table(file="dataEmotionDebriefing.txt",header=F,sep=",",dec=".",fill=T,blank.lines.skip=F)
+head(donneesDebriefing)
+
+#concatenate tables
+data=data.frame(donneesEAT,donneesDebriefing)
+data
+
+#columns names
+individus=c("D02P01","D02P02","D03P01","D05P01","D05P02","D07P01","D07P02","D09P01","D09P02","D11P01","D11P02","D13P02","D16P02","D21P01","D21P02","D23P01","D23P02","D26P01","D26P02","D27P01","D27P02","D29P01","D29P02")
+rownames(data)=individus
+variables=c("nbrePosEAT","nbreNegEAT","pctPosEAT","pctNegEAT","pctDifEAT","nbrePosDeb","nbreNegDeb","pctPosDeb","pctNegDeb","pctDifDeb")
+colnames(data)=variables
+attach(data)
+data
+
+```
+## Descriptive statistics
+```{r}
+valeurs=stack(donnees)$values
+individus=stack(donnees)$ind
+tapply(valeurs, individus, summary)
+
+```
+
+## Inferential statistics
+```{r}
+donnees_stats=donnees[,-c(3,4,5,8,9,10)];head(donnees_stats) #Suppression des colonnes pourcentages
+sujet=gl(23,4,92)
+session=gl(2,2,92)
+emotion=gl(2,1,92)
+
+Y=0
+t=1
+for (i in 1:23){
+  for (j in 1:4){
+    Y[t]<-donnees_stats[i,j]
+    t=t+1
+  }
+}
+Y
+
+tableau_stats=data.frame(sujet,session,emotion,Y)
+tableau_stats
+```
+
+## ANOVA assumptions
+```{r}
+#Distribution normality
+#Shapiro test
+plot(density(nbrePosEAT)) #Density distribution
+shapiro.test(nbrePosEAT) 
+qqnorm(nbrePosEAT)
+
+plot(density(nbrePosDeb))
+shapiro.test(nbrePosDeb) 
+qqnorm(nbrePosDeb)
+
+plot(density(nbreNegEAT))
+shapiro.test(nbreNegEAT) 
+qqnorm(nbreNegEAT)
+
+plot(density(nbreNegDeb))
+shapiro.test(nbreNegDeb) 
+qqnorm(nbreNegDeb)
+
+#Variance homogeneity : (max / min doit être inférieure à 1.5) 
+max(nbrePosEAT)/min(nbrePosEAT)
+max(nbrePosDeb)/min(nbrePosDeb) 
+max(nbreNegEAT)/min(nbreNegEAT) 
+max(nbreNegDeb)/min(nbreNegDeb) 
+```
+
+
+## Friedman test with post-hoc (repeated-measures non parametric test)
+```{r}
+source("http://www.r-statistics.com/wp-content/uploads/2010/02/Friedman-Test-with-Post-Hoc.r.txt")  # loading the friedman.test.with.post.hoc function from the internet
+
+friedman_table <- data.frame(
+  Y = c(8,0,4,4,8,0,21,3,5,0,5,3,9,2,6,4,8,2,4,0,11,1,8,3,6,1,10,15,25,4,10,7,16,0,11,3,23,7,11,1,8,3,5,2,16,8,22,6,10,0,14,7,12,1,11,2,15,4,12,8,7,1,13,3,6,0,35,9,16,0,21,12,17,4,9,5,8,0,30,5,12,2,6,3,16,6,8,6,18,2,10,3),
+  condition = factor(rep(c("PosEAT", "NegEAT", "PosDeb","NegDeb"), 23)),
+  sujet = factor(rep(1:23, rep(4, 23))))
+
+friedman_table
+```
+
+## Plot
+```{r}
+ggboxplot(friedman_table, x = "condition", y = "Y",
+          palette = c("#00AFBB", "#E7B800"))
+
+
+```
+## Test
+
+```{r}
+friedman.test.with.post.hoc(Y ~ condition | sujet ,friedman_table)  # the same with our function. With post hoc, and cool plots
+```
+
+## data tranformation for correlation analysis
+```{r}
+donnees_correlations=transform(donnees_stats,pctPosEAT=nbrePosEAT*100/(nbrePosEAT+nbreNegEAT),
+                               pctPosDeb=nbrePosDeb*100/(nbrePosDeb+nbreNegDeb),
+                               pctNegEAT=nbreNegEAT*100/(nbrePosEAT+nbreNegEAT),
+                               pctNegDeb=nbreNegDeb*100/(nbrePosDeb+nbreNegDeb),
+                               pctPos=pctPosEAT-pctPosDeb,
+                               pctNeg=pctNegDeb-pctNegEAT,
+                               negDif=nbreNegEAT-nbreNegDeb, #difference between negative expressed and negative felt
+                               posDif=nbrePosEAT-nbrePosDeb) #difference between positive expressed and postive felt
+
+donnees_correlations
+```
+
+## Reporting data import
+```{r}
+#IMPORTATION DES DONNEES REPORT
+donneesReport=read.csv2("data_debriefing.csv");head(donneesReport)
+donneesReport
+```
+
+## Data extraction
+```{r}
+sujets=c(3,4,5,9,10,13,14,17,18,21,22,26,32,41,42,45,46,51,52,53,54,57,58)
+donneesEAT=subset(donneesReport, Sujets %in% sujets)
+attach(donneesEAT)
+donneesEAT
+
+collaboration=donneesEAT[157:167]
+collaboration
+
+dataCollaboration=cbind(donnees_correlations$negDif,donnees_correlations$posDif,collaboration)
+dataCollaboration
+```
+
+
+## Correlation
+```{r}
+#Correlation between cognitive reevaluation and negDif
+cor.test(donnees_correlations$negDif,Reevaluation_cognitive)
+cor.test((donnees_correlations$pctNegEAT-donnees_correlations$pctNegDeb),Reevaluation_cognitive)
+```
+
+
+```{r}
+#Correlation between cognitive reevaluation and posDif
+cor.test(donnees_correlations$posDif,Reevaluation_cognitive)
+cor.test((donnees_correlations$pctPosEAT-donnees_correlations$pctPosDeb),Reevaluation_cognitive)
+```
+
+```{r}
+#Correlation between cognitive reevaluation and negDif
+cor.test(donnees_correlations$negDif,Gerer_les_emotions)
+cor.test((donnees_correlations$pctNegEAT-donnees_correlations$pctNegDeb),Gerer_les_emotions)
+```
+```{r}
+#Correlation between cognitive reevaluation and posDif
+cor.test(donnees_correlations$posDif,Gerer_les_emotions)
+cor.test((donnees_correlations$pctPosEAT-donnees_correlations$pctPosDeb),Gerer_les_emotions)
+```
