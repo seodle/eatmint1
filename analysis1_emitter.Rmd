@@ -1,0 +1,1614 @@
+---
+title: "EATMINT1 experiment - Sharing emotions generates online adaptative collaborative acts. Analysis 1 : changes in emitter's collaborative acts preceding the sharing of an emotional label"
+author: "Sunny Avry"
+date: "March 21th, 2020"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+  toc: TRUE
+---
+
+
+```{r message=FALSE, warning=FALSE}
+library(xlsx);library(dplyr);library(lubridate)
+```
+
+```{r}
+options(scipen=999) #remove scientific notation
+data <- read.csv2("taux_utilisation_actes.csv")
+data_eat <- data[data$eat == "Oui",]
+data_eat
+```
+
+## Global variables
+```{r}
+#window size
+max.window.size <- 5 #size of the window = number of collaborative acts per window
+max.window.size
+
+#dyad having used the emotion awareness tool (eat condition) for sharing their emotions 
+dyads_eat <- c(
+"D02",
+"D05",
+"D07",
+"D09",
+"D13",
+"D16",
+"D21",
+"D23",
+"D26",
+"D27",
+"D29")
+
+#participants in eat condition
+participants_eat <- c(
+"D02P01",
+"D02P02",
+"D05P01",
+"D05P02",
+"D07P01",
+"D07P02",
+"D09P01",
+"D09P02",
+"D13P01",
+"D13P02",
+"D16P01",
+"D16P02",
+"D21P01",
+"D21P02",
+"D23P01",
+"D23P02",
+"D26P01",
+"D26P02",
+"D27P01",
+"D27P02",
+"D29P01",
+"D29P02")
+
+#participants in no-eat condition
+participants_no_eat <- c(
+"D04P01",
+"D04P02",
+"D06P01",
+"D06P02",
+"D08P01",
+"D08P02",
+"D10P01",
+"D10P02",
+"D12P01",
+"D12P02",
+"D15P01",
+"D15P02",
+"D20P01",
+"D20P02",
+"D24P01",
+"D24P02")
+
+#emotions displayed during the collaborative problem-solving
+emotions <- c(
+"interested",
+"focused",
+"delighted",
+"satisfied",
+"confident",
+"amused",
+"relieved",
+"relaxed",
+"confused",
+"stressed",
+"dissatisfied",
+"annoyed",
+"frustrated",
+"grateful",
+"disappointed",
+"empathic",
+"bored",
+"surprised",
+"puzzled",
+"anxious",
+"impatient")
+
+#collaborative acts emitted by participants
+collaborative.processes <- c(
+"accept",
+"agree",
+"check.comprehension",
+"check.reception",
+"coordinate.teamwork",
+"disagree",
+"elicit.opinion",
+"elicit.partner.information",
+"elicit.proposition",
+"elicit.recall",
+"elicit.task.information",
+"give.explanation",
+"give.opinion.against",
+"give.opinion.for",
+"give.proposition",
+"give.recall",
+"give.self.information",
+"give.task.information",
+"incorporate",
+"manage.task",
+"other",
+"outside.activity",
+"relax.atmosphere",
+"show.active.listening",
+"show.reflection",
+"show.hostility",
+"show.solidarity",
+"tool.discourse",
+"use.social.convention")
+
+```
+## RTU computation
+
+### Interested
+```{r}
+#Find cases available (participants that have shared the emotion)
+interested.cases <- c()
+
+emotion = "interested"
+for (participant in participants_eat) {
+    print(paste("For participant ", participant," there is", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondence(s)"))
+    interested.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+interested.available.cases <- interested.cases[interested.cases != 0]
+interested.available.cases
+length(interested.available.cases)
+names(interested.available.cases)
+```
+
+```{r}
+#interested sample
+participants_eat_interested <- c("D02P01","D07P01","D09P01","D13P01","D16P01","D21P01","D23P01","D26P01","D29P01", "D02P02","D05P02","D07P02","D09P02","D13P02","D16P02","D21P02","D23P02","D27P02","D29P02")
+```
+
+
+Compute the real-time use for the emotion interested
+
+```{r}
+
+#select the subset of collaborative processes for a given participant. For the emotion interested, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+interested.table <- data.frame(n)
+rownames(interested.table) <- collaborative.processes
+
+for (p in participants_eat_interested)
+
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+    interested.collaborative.processes.table <- data.frame(m)
+  
+  interested.times <- data[which(data$participant == p & data$shared.emotion == "interested"),c("unix.time.video")]
+  
+   for (i in seq(1:length(interested.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 interested.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      interested.collaborative.processes.table[,paste0("occurence",i)] <-
+      selection[length(selection):(length(selection)-(max.window.size-1))]
+   }
+  
+  interested.collaborative.processes.table
+  length(interested.collaborative.processes.table)
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(interested.collaborative.processes.table[interested.collaborative.processes.table == i])
+  }
+  
+  if (length(interested.collaborative.processes.table) > 0) 
+      
+      {
+    
+      x <- x/length(interested.collaborative.processes.table) #number of emotion windows
+      interested.table[,p] = x
+    
+     }
+}
+
+interested.table 
+
+```
+
+Compute the real-time use when no emotion interested
+
+```{r}
+#Select a subset of the data not including the emotion windows
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.interested.table <- data.frame(n)
+rownames(non.interested.table) <- collaborative.processes
+
+for (p in participants_eat_interested)
+{
+  interested.times <- data[which(data$participant == p & data$shared.emotion =="interested"),c("unix.time.video")]
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(interested.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 interested.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      to.be.dropped <- c(to.be.dropped,selection[length(selection):(length(selection)-(max.window.size-1))])
+    }
+  
+    #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)]
+  data.kept <- data[data$participant == p,][-to.be.dropped,] #data.kept is the data without emotion windows
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of no-emotion windows
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+      }
+  
+  non.interested.table[,p] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.interested.table = subset(non.interested.table, select = -c(D13P01,D05P02))
+non.interested.table
+```
+### focused
+```{r}
+#Find cases available (participants that have shared the emotion)
+focused.cases <- c()
+
+emotion = "focused"
+for (participant in participants_eat) {
+    print(paste("For participant ", participant," there is", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondence(s)"))
+    focused.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+focused.available.cases <- focused.cases[focused.cases != 0]
+focused.available.cases
+length(focused.available.cases)
+names(focused.available.cases)
+```
+
+```{r}
+#focused sample
+#focused sample
+participants_eat_focused <- c("D02P01","D07P01","D07P01","D09P01","D13P01","D16P01","D21P01","D23P01","D26P01","D27P01","D02P02","D05P02","D07P02","D09P02","D13P02","D16P02","D21P02","D23P02","D26P02","D27P02","D29P02")
+```
+
+
+Compute the real-time use for the emotion focused
+
+```{r}
+
+#select the subset of collaborative processes for a given participant. For the emotion focused, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+focused.table <- data.frame(n)
+rownames(focused.table) <- collaborative.processes
+
+for (p in participants_eat_focused)
+
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+    focused.collaborative.processes.table <- data.frame(m)
+  
+  focused.times <- data[which(data$participant == p & data$shared.emotion == "focused"),c("unix.time.video")]
+  
+   for (i in seq(1:length(focused.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 focused.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      focused.collaborative.processes.table[,paste0("occurence",i)] <-
+      selection[length(selection):(length(selection)-(max.window.size-1))]
+   }
+  
+  focused.collaborative.processes.table
+  length(focused.collaborative.processes.table)
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(focused.collaborative.processes.table[focused.collaborative.processes.table == i])
+  }
+  
+  if (length(focused.collaborative.processes.table) > 0) 
+      
+      {
+    
+      x <- x/length(focused.collaborative.processes.table) #number of emotion windows
+      focused.table[,p] = x
+    
+     }
+}
+
+focused.table 
+
+```
+
+Compute the real-time use when no emotion focused
+
+```{r}
+#Select a subset of the data not including the emotion windows
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.focused.table <- data.frame(n)
+rownames(non.focused.table) <- collaborative.processes
+
+for (p in participants_eat_focused)
+{
+  focused.times <- data[which(data$participant == p & data$shared.emotion =="focused"),c("unix.time.video")]
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(focused.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 focused.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      to.be.dropped <- c(to.be.dropped,selection[length(selection):(length(selection)-(max.window.size-1))])
+    }
+  
+    #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)]
+  data.kept <- data[data$participant == p,][-to.be.dropped,] #data.kept is the data without emotion windows
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of no-emotion windows
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+      }
+  
+  non.focused.table[,p] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+non.focused.table = subset(non.focused.table, select = -c(D02P02))
+non.focused.table
+```
+
+### delighted
+```{r}
+#Find cases available (participants that have shared the emotion)
+delighted.cases <- c()
+
+emotion = "delighted"
+for (participant in participants_eat) {
+    print(paste("For participant ", participant," there is", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondence(s)"))
+    delighted.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+delighted.available.cases <- delighted.cases[delighted.cases != 0]
+delighted.available.cases
+length(delighted.available.cases)
+names(delighted.available.cases)
+```
+
+```{r}
+#delighted sample
+participants_eat_delighted <- c("D02P01","D05P01","D09P01","D26P01","D27P01","D29P01","D09P02","D13P02","D21P02","D27P02","D29P02")
+```
+
+
+Compute the real-time use for the emotion delighted
+
+```{r}
+
+#select the subset of collaborative processes for a given participant. For the emotion delighted, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+delighted.table <- data.frame(n)
+rownames(delighted.table) <- collaborative.processes
+
+for (p in participants_eat_delighted)
+
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+    delighted.collaborative.processes.table <- data.frame(m)
+  
+  delighted.times <- data[which(data$participant == p & data$shared.emotion == "delighted"),c("unix.time.video")]
+  
+   for (i in seq(1:length(delighted.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 delighted.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      delighted.collaborative.processes.table[,paste0("occurence",i)] <-
+      selection[length(selection):(length(selection)-(max.window.size-1))]
+   }
+  
+  delighted.collaborative.processes.table
+  length(delighted.collaborative.processes.table)
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(delighted.collaborative.processes.table[delighted.collaborative.processes.table == i])
+  }
+  
+  if (length(delighted.collaborative.processes.table) > 0) 
+      
+      {
+    
+      x <- x/length(delighted.collaborative.processes.table) #number of emotion windows
+      delighted.table[,p] = x
+    
+     }
+}
+
+delighted.table 
+
+```
+
+Compute the real-time use when no emotion delighted
+
+```{r}
+#Select a subset of the data not including the emotion windows
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.delighted.table <- data.frame(n)
+rownames(non.delighted.table) <- collaborative.processes
+
+for (p in participants_eat_delighted)
+{
+  delighted.times <- data[which(data$participant == p & data$shared.emotion =="delighted"),c("unix.time.video")]
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(delighted.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 delighted.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      to.be.dropped <- c(to.be.dropped,selection[length(selection):(length(selection)-(max.window.size-1))])
+    }
+  
+    #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)]
+  data.kept <- data[data$participant == p,][-to.be.dropped,] #data.kept is the data without emotion windows
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of no-emotion windows
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+      }
+  
+  non.delighted.table[,p] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.delighted.table
+```
+
+### satisfied
+```{r}
+#Find cases available (participants that have shared the emotion)
+satisfied.cases <- c()
+
+emotion = "satisfied"
+for (participant in participants_eat) {
+    print(paste("For participant ", participant," there is", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondence(s)"))
+    satisfied.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+satisfied.available.cases <- satisfied.cases[satisfied.cases != 0]
+satisfied.available.cases
+length(satisfied.available.cases)
+names(satisfied.available.cases)
+```
+
+```{r}
+#satisfied sample
+participants_eat_satisfied <- c("D02P01","D05P01","D09P01","D16P01","D21P01","D23P01","D26P01","D29P01","D02P02","D09P02","D13P02","D16P02","D21P02","D26P02","D27P02","D29P02")
+```
+
+
+Compute the real-time use for the emotion satisfied
+
+```{r}
+
+#select the subset of collaborative processes for a given participant. For the emotion satisfied, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+satisfied.table <- data.frame(n)
+rownames(satisfied.table) <- collaborative.processes
+
+for (p in participants_eat_satisfied)
+
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+    satisfied.collaborative.processes.table <- data.frame(m)
+  
+  satisfied.times <- data[which(data$participant == p & data$shared.emotion == "satisfied"),c("unix.time.video")]
+  
+   for (i in seq(1:length(satisfied.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 satisfied.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      satisfied.collaborative.processes.table[,paste0("occurence",i)] <-
+      selection[length(selection):(length(selection)-(max.window.size-1))]
+   }
+  
+  satisfied.collaborative.processes.table
+  length(satisfied.collaborative.processes.table)
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(satisfied.collaborative.processes.table[satisfied.collaborative.processes.table == i])
+  }
+  
+  if (length(satisfied.collaborative.processes.table) > 0) 
+      
+      {
+    
+      x <- x/length(satisfied.collaborative.processes.table) #number of emotion windows
+      satisfied.table[,p] = x
+    
+     }
+}
+
+satisfied.table 
+
+```
+
+Compute the real-time use when no emotion satisfied
+
+```{r}
+#Select a subset of the data not including the emotion windows
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.satisfied.table <- data.frame(n)
+rownames(non.satisfied.table) <- collaborative.processes
+
+for (p in participants_eat_satisfied)
+{
+  satisfied.times <- data[which(data$participant == p & data$shared.emotion =="satisfied"),c("unix.time.video")]
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(satisfied.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 satisfied.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      to.be.dropped <- c(to.be.dropped,selection[length(selection):(length(selection)-(max.window.size-1))])
+    }
+  
+    #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)]
+  data.kept <- data[data$participant == p,][-to.be.dropped,] #data.kept is the data without emotion windows
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of no-emotion windows
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+      }
+  
+  non.satisfied.table[,p] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.satisfied.table
+```
+
+### amused
+```{r}
+#Find cases available (participants that have shared the emotion)
+amused.cases <- c()
+
+emotion = "amused"
+for (participant in participants_eat) {
+    print(paste("For participant ", participant," there is", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondence(s)"))
+    amused.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+amused.available.cases <- amused.cases[amused.cases != 0]
+amused.available.cases
+length(amused.available.cases)
+names(amused.available.cases)
+```
+
+```{r}
+#amused sample
+participants_eat_amused <- c("D02P01","D05P01","D07P01","D09P01","D13P01","D16P01","D21P01","D23P01","D26P01","D27P01","D29P01","D07P02","D09P02","D13P02","D21P02","D23P02","D26P02","D27P02")
+```
+
+
+Compute the real-time use for the emotion amused
+
+```{r}
+
+#select the subset of collaborative processes for a given participant. For the emotion amused, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+amused.table <- data.frame(n)
+rownames(amused.table) <- collaborative.processes
+
+for (p in participants_eat_amused)
+
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+    amused.collaborative.processes.table <- data.frame(m)
+  
+  amused.times <- data[which(data$participant == p & data$shared.emotion == "amused"),c("unix.time.video")]
+  
+   for (i in seq(1:length(amused.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 amused.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      amused.collaborative.processes.table[,paste0("occurence",i)] <-
+      selection[length(selection):(length(selection)-(max.window.size-1))]
+   }
+  
+  amused.collaborative.processes.table
+  length(amused.collaborative.processes.table)
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(amused.collaborative.processes.table[amused.collaborative.processes.table == i])
+  }
+  
+  if (length(amused.collaborative.processes.table) > 0) 
+      
+      {
+    
+      x <- x/length(amused.collaborative.processes.table) #number of emotion windows
+      amused.table[,p] = x
+    
+     }
+}
+
+amused.table 
+
+```
+
+Compute the real-time use when no emotion amused
+
+```{r}
+#Select a subset of the data not including the emotion windows
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.amused.table <- data.frame(n)
+rownames(non.amused.table) <- collaborative.processes
+
+for (p in participants_eat_amused)
+{
+  amused.times <- data[which(data$participant == p & data$shared.emotion =="amused"),c("unix.time.video")]
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(amused.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 amused.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      to.be.dropped <- c(to.be.dropped,selection[length(selection):(length(selection)-(max.window.size-1))])
+    }
+  
+    #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)]
+  data.kept <- data[data$participant == p,][-to.be.dropped,] #data.kept is the data without emotion windows
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of no-emotion windows
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+      }
+  
+  non.amused.table[,p] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.amused.table
+```
+
+### relaxed
+```{r}
+#Find cases available (participants that have shared the emotion)
+relaxed.cases <- c()
+
+emotion = "relaxed"
+for (participant in participants_eat) {
+    print(paste("For participant ", participant," there is", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondence(s)"))
+    relaxed.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+relaxed.available.cases <- relaxed.cases[relaxed.cases != 0]
+relaxed.available.cases
+length(relaxed.available.cases)
+names(relaxed.available.cases)
+```
+
+```{r}
+#relaxed sample
+participants_eat_relaxed <- c("D05P01","D07P01","D09P01","D21P01","D23P01","D27P01","D05P02","D09P02","D16P02","D21P02","D26P02","D27P02")
+```
+
+
+Compute the real-time use for the emotion relaxed
+
+```{r}
+
+#select the subset of collaborative processes for a given participant. For the emotion relaxed, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+relaxed.table <- data.frame(n)
+rownames(relaxed.table) <- collaborative.processes
+
+for (p in participants_eat_relaxed)
+
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+    relaxed.collaborative.processes.table <- data.frame(m)
+  
+  relaxed.times <- data[which(data$participant == p & data$shared.emotion == "relaxed"),c("unix.time.video")]
+  
+   for (i in seq(1:length(relaxed.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 relaxed.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      relaxed.collaborative.processes.table[,paste0("occurence",i)] <-
+      selection[length(selection):(length(selection)-(max.window.size-1))]
+   }
+  
+  relaxed.collaborative.processes.table
+  length(relaxed.collaborative.processes.table)
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(relaxed.collaborative.processes.table[relaxed.collaborative.processes.table == i])
+  }
+  
+  if (length(relaxed.collaborative.processes.table) > 0) 
+      
+      {
+    
+      x <- x/length(relaxed.collaborative.processes.table) #number of emotion windows
+      relaxed.table[,p] = x
+    
+     }
+}
+
+relaxed.table 
+
+```
+
+Compute the real-time use when no emotion relaxed
+
+```{r}
+#Select a subset of the data not including the emotion windows
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.relaxed.table <- data.frame(n)
+rownames(non.relaxed.table) <- collaborative.processes
+
+for (p in participants_eat_relaxed)
+{
+  relaxed.times <- data[which(data$participant == p & data$shared.emotion =="relaxed"),c("unix.time.video")]
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(relaxed.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 relaxed.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      to.be.dropped <- c(to.be.dropped,selection[length(selection):(length(selection)-(max.window.size-1))])
+    }
+  
+    #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)]
+  data.kept <- data[data$participant == p,][-to.be.dropped,] #data.kept is the data without emotion windows
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of no-emotion windows
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+      }
+  
+  non.relaxed.table[,p] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.relaxed.table = subset(non.relaxed.table, select = -c(D07P01,D23P01, D16P02))
+non.relaxed.table
+```
+
+### confident
+```{r}
+#Find cases available (participants that have shared the emotion)
+confident.cases <- c()
+
+emotion = "confident"
+for (participant in participants_eat) {
+    print(paste("For participant ", participant," there is", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondence(s)"))
+    confident.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+confident.available.cases <- confident.cases[confident.cases != 0]
+confident.available.cases
+length(confident.available.cases)
+names(confident.available.cases)
+```
+
+```{r}
+#confident sample
+participants_eat_confident <- c("D09P01","D16P01","D26P01","D27P01","D29P01","D02P02","D05P02","D16P02","D26P02")
+```
+
+
+Compute the real-time use for the emotion confident
+
+```{r}
+
+#select the subset of collaborative processes for a given participant. For the emotion confident, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+confident.table <- data.frame(n)
+rownames(confident.table) <- collaborative.processes
+
+for (p in participants_eat_confident)
+
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+    confident.collaborative.processes.table <- data.frame(m)
+  
+  confident.times <- data[which(data$participant == p & data$shared.emotion == "confident"),c("unix.time.video")]
+  
+   for (i in seq(1:length(confident.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 confident.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      confident.collaborative.processes.table[,paste0("occurence",i)] <-
+      selection[length(selection):(length(selection)-(max.window.size-1))]
+   }
+  
+  confident.collaborative.processes.table
+  length(confident.collaborative.processes.table)
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(confident.collaborative.processes.table[confident.collaborative.processes.table == i])
+  }
+  
+  if (length(confident.collaborative.processes.table) > 0) 
+      
+      {
+    
+      x <- x/length(confident.collaborative.processes.table) #number of emotion windows
+      confident.table[,p] = x
+    
+     }
+}
+
+confident.table 
+
+```
+
+Compute the real-time use when no emotion confident
+
+```{r}
+#Select a subset of the data not including the emotion windows
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.confident.table <- data.frame(n)
+rownames(non.confident.table) <- collaborative.processes
+
+for (p in participants_eat_confident)
+{
+  confident.times <- data[which(data$participant == p & data$shared.emotion =="confident"),c("unix.time.video")]
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(confident.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 confident.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      to.be.dropped <- c(to.be.dropped,selection[length(selection):(length(selection)-(max.window.size-1))])
+    }
+  
+    #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)]
+  data.kept <- data[data$participant == p,][-to.be.dropped,] #data.kept is the data without emotion windows
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of no-emotion windows
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+      }
+  
+  non.confident.table[,p] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.confident.table
+```
+
+### confused
+```{r}
+#Find cases available (participants that have shared the emotion)
+confused.cases <- c()
+
+emotion = "confused"
+for (participant in participants_eat) {
+    print(paste("For participant ", participant," there is", length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")]),"correspondence(s)"))
+    confused.cases[participant] <- length(data[which(data$participant == participant & data$shared.emotion == emotion),c("shared.emotion")])
+}
+
+confused.available.cases <- confused.cases[confused.cases != 0]
+confused.available.cases
+length(confused.available.cases)
+names(confused.available.cases)
+```
+
+```{r}
+#confused sample
+participants_eat_confused <- c("D05P01","D07P01","D13P01","D29P01","D07P02","D26P02")
+```
+
+
+Compute the real-time use for the emotion confused
+
+```{r}
+
+#select the subset of collaborative processes for a given participant. For the emotion confused, the (max.windows.size) collaborative processes of the other's partner from the same dyad are selected
+
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+confused.table <- data.frame(n)
+rownames(confused.table) <- collaborative.processes
+
+for (p in participants_eat_confused)
+
+{
+  m <- matrix(data=NA,nrow=max.window.size,ncol=0)
+    confused.collaborative.processes.table <- data.frame(m)
+  
+  confused.times <- data[which(data$participant == p & data$shared.emotion == "confused"),c("unix.time.video")]
+  
+   for (i in seq(1:length(confused.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 confused.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      confused.collaborative.processes.table[,paste0("occurence",i)] <-
+      selection[length(selection):(length(selection)-(max.window.size-1))]
+   }
+  
+  confused.collaborative.processes.table
+  length(confused.collaborative.processes.table)
+  
+  #compute the real-time use for every collaborative process
+  x <- c()
+  for (i in collaborative.processes)
+  {
+    x[i] <- length(confused.collaborative.processes.table[confused.collaborative.processes.table == i])
+  }
+  
+  if (length(confused.collaborative.processes.table) > 0) 
+      
+      {
+    
+      x <- x/length(confused.collaborative.processes.table) #number of emotion windows
+      confused.table[,p] = x
+    
+     }
+}
+
+confused.table 
+
+```
+
+Compute the real-time use when no emotion confused
+
+```{r}
+#Select a subset of the data not including the emotion windows
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+non.confused.table <- data.frame(n)
+rownames(non.confused.table) <- collaborative.processes
+
+for (p in participants_eat_confused)
+{
+  confused.times <- data[which(data$participant == p & data$shared.emotion =="confused"),c("unix.time.video")]
+  to.be.dropped <- vector()
+  
+  for (i in seq(1:length(confused.times)))
+    {
+      selection <- data[which(data$participant == p & data$unix.time.video <                                                 confused.times[i]),c("collaborative.processes")]
+      
+     if (length(selection) < max.window.size)
+     {
+       next
+     }
+      
+      to.be.dropped <- c(to.be.dropped,selection[length(selection):(length(selection)-(max.window.size-1))])
+    }
+  
+    #remove NA when max.window.size goes out of bounds because the end of collaborative acts for that participant is reached
+  to.be.dropped <- to.be.dropped[!is.na(to.be.dropped)]
+  data.kept <- data[data$participant == p,][-to.be.dropped,] #data.kept is the data without emotion windows
+  
+  #Keep a number of lines that is a multiple of max.windows.size = number of no-emotion windows
+  n <- nrow(data.kept)
+  data.kept <- data.kept[c(1:(n-(n%%max.window.size))),]
+  
+  length(data.kept$participant)
+  
+  results <- c()
+  for (process in collaborative.processes)
+    {
+    results <- c(results, sum(data.kept$collaborative.processes==process))
+      }
+  
+  non.confused.table[,p] <- results/(length(data.kept$collaborative.processes)%/%max.window.size)
+  results <- c()
+  
+}
+
+non.confused.table
+```
+
+## Permuation tests
+
+```{r}
+number_of_permutations = 9999
+
+n <- matrix(data=NA,nrow=length(collaborative.processes),ncol=0)
+emotions.results.permutation.correction <- data.frame(n)
+rownames(emotions.results.permutation.correction) <- collaborative.processes
+```
+
+### interested
+
+```{r}
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+
+for (process in collaborative.processes) {
+
+  observed.mean.difference <- mean(as.numeric(interested.table[process,])) - mean(as.numeric(non.interested.table[process,]))
+  observed.mean.difference
+  
+  random.mean.differences <- c(observed.mean.difference)
+  
+  whole.sample <- c(as.numeric(interested.table[process,]),as.numeric(non.interested.table[process,])) #put together the two samples
+  
+  for (i in 1:number_of_permutations) {
+    
+    random.sample <- sample(whole.sample) #randomize the sample
+    random.treatment.sample <- random.sample[1:length(as.numeric(interested.table[process,]))] #select new treatment sample
+    random.control.sample <- random.sample[(1+length(as.numeric(interested.table[process,]))):length(random.sample)] #select new control sample
+    random.mean.differences <- c(random.mean.differences,mean(random.treatment.sample)-mean(random.control.sample))
+  
+  }
+  
+    results <- c(results, sum(abs(random.mean.differences) >= abs(observed.mean.difference)) / length(random.mean.differences))
+    mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.interested.table[process,])))
+    mean.emotion <- c(mean.emotion,mean(as.numeric(interested.table[process,])))
+    sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.interested.table[process,])))
+    sd.emotion <- c(sd.emotion,sd(as.numeric(interested.table[process,])))
+    
+    #graphs
+    hist(random.mean.differences, main = paste0("Sampling distribution ",process), xlab = "Mean difference", prob = F, col = "darkred")
+    abline(v = observed.mean.difference, col = "blue", lwd = 2)
+    
+}
+```
+
+```{r}
+emotions.results.permutation.correction$interested_p.value <- p.adjust(results, method="BH")
+emotions.results.permutation.correction$interested_mean.no.emotion <- mean.no.emotion
+emotions.results.permutation.correction$interested_mean.emotion <- mean.emotion
+emotions.results.permutation.correction$interested_sd.no.emotion <- sd.no.emotion
+emotions.results.permutation.correction$interested_sd.emotion <- sd.emotion
+
+emotions.results.permutation.correction[,c("interested_p.value"), drop=FALSE]
+```
+
+
+### focused
+
+```{r}
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+
+for (process in collaborative.processes) {
+
+  observed.mean.difference <- mean(as.numeric(focused.table[process,])) - mean(as.numeric(non.focused.table[process,]))
+  observed.mean.difference
+  
+  random.mean.differences <- c(observed.mean.difference)
+  
+  whole.sample <- c(as.numeric(focused.table[process,]),as.numeric(non.focused.table[process,])) #put together the two samples
+  
+  for (i in 1:number_of_permutations) {
+    
+    random.sample <- sample(whole.sample) #randomize the sample
+    random.treatment.sample <- random.sample[1:length(as.numeric(focused.table[process,]))] #select new treatment sample
+    random.control.sample <- random.sample[(1+length(as.numeric(focused.table[process,]))):length(random.sample)] #select new control sample
+    random.mean.differences <- c(random.mean.differences,mean(random.treatment.sample)-mean(random.control.sample))
+  
+  }
+  
+    results <- c(results, sum(abs(random.mean.differences) >= abs(observed.mean.difference)) / length(random.mean.differences))
+    mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.focused.table[process,])))
+    mean.emotion <- c(mean.emotion,mean(as.numeric(focused.table[process,])))
+    sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.focused.table[process,])))
+    sd.emotion <- c(sd.emotion,sd(as.numeric(focused.table[process,])))
+    
+    #graphs
+    hist(random.mean.differences, main = paste0("Sampling distribution ",process), xlab = "Mean difference", prob = F, col = "darkred")
+    abline(v = observed.mean.difference, col = "blue", lwd = 2)
+    
+}
+```
+
+```{r}
+emotions.results.permutation.correction$focused_p.value <- p.adjust(results, method="BH")
+emotions.results.permutation.correction$focused_mean.no.emotion <- mean.no.emotion
+emotions.results.permutation.correction$focused_mean.emotion <- mean.emotion
+emotions.results.permutation.correction$focused_sd.no.emotion <- sd.no.emotion
+emotions.results.permutation.correction$focused_sd.emotion <- sd.emotion
+
+emotions.results.permutation.correction[,c("focused_p.value"), drop=FALSE]
+```
+
+
+### delighted
+
+```{r}
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+
+for (process in collaborative.processes) {
+
+  observed.mean.difference <- mean(as.numeric(delighted.table[process,])) - mean(as.numeric(non.delighted.table[process,]))
+  observed.mean.difference
+  
+  random.mean.differences <- c(observed.mean.difference)
+  
+  whole.sample <- c(as.numeric(delighted.table[process,]),as.numeric(non.delighted.table[process,])) #put together the two samples
+  
+  for (i in 1:number_of_permutations) {
+    
+    random.sample <- sample(whole.sample) #randomize the sample
+    random.treatment.sample <- random.sample[1:length(as.numeric(delighted.table[process,]))] #select new treatment sample
+    random.control.sample <- random.sample[(1+length(as.numeric(delighted.table[process,]))):length(random.sample)] #select new control sample
+    random.mean.differences <- c(random.mean.differences,mean(random.treatment.sample)-mean(random.control.sample))
+  
+  }
+  
+    results <- c(results, sum(abs(random.mean.differences) >= abs(observed.mean.difference)) / length(random.mean.differences))
+    mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.delighted.table[process,])))
+    mean.emotion <- c(mean.emotion,mean(as.numeric(delighted.table[process,])))
+    sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.delighted.table[process,])))
+    sd.emotion <- c(sd.emotion,sd(as.numeric(delighted.table[process,])))
+    
+    #graphs
+    hist(random.mean.differences, main = paste0("Sampling distribution ",process), xlab = "Mean difference", prob = F, col = "darkred")
+    abline(v = observed.mean.difference, col = "blue", lwd = 2)
+    
+}
+```
+
+```{r}
+emotions.results.permutation.correction$delighted_p.value <- p.adjust(results, method="BH")
+emotions.results.permutation.correction$delighted_mean.no.emotion <- mean.no.emotion
+emotions.results.permutation.correction$delighted_mean.emotion <- mean.emotion
+emotions.results.permutation.correction$delighted_sd.no.emotion <- sd.no.emotion
+emotions.results.permutation.correction$delighted_sd.emotion <- sd.emotion
+
+emotions.results.permutation.correction[,c("delighted_p.value"), drop=FALSE]
+```
+
+### satisfied
+
+```{r}
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+
+for (process in collaborative.processes) {
+
+  observed.mean.difference <- mean(as.numeric(satisfied.table[process,])) - mean(as.numeric(non.satisfied.table[process,]))
+  observed.mean.difference
+  
+  random.mean.differences <- c(observed.mean.difference)
+  
+  whole.sample <- c(as.numeric(satisfied.table[process,]),as.numeric(non.satisfied.table[process,])) #put together the two samples
+  
+  for (i in 1:number_of_permutations) {
+    
+    random.sample <- sample(whole.sample) #randomize the sample
+    random.treatment.sample <- random.sample[1:length(as.numeric(satisfied.table[process,]))] #select new treatment sample
+    random.control.sample <- random.sample[(1+length(as.numeric(satisfied.table[process,]))):length(random.sample)] #select new control sample
+    random.mean.differences <- c(random.mean.differences,mean(random.treatment.sample)-mean(random.control.sample))
+  
+  }
+  
+    results <- c(results, sum(abs(random.mean.differences) >= abs(observed.mean.difference)) / length(random.mean.differences))
+    mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.satisfied.table[process,])))
+    mean.emotion <- c(mean.emotion,mean(as.numeric(satisfied.table[process,])))
+    sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.satisfied.table[process,])))
+    sd.emotion <- c(sd.emotion,sd(as.numeric(satisfied.table[process,])))
+    
+    #graphs
+    hist(random.mean.differences, main = paste0("Sampling distribution ",process), xlab = "Mean difference", prob = F, col = "darkred")
+    abline(v = observed.mean.difference, col = "blue", lwd = 2)
+    
+}
+```
+
+```{r}
+emotions.results.permutation.correction$satisfied_p.value <- p.adjust(results, method="BH")
+emotions.results.permutation.correction$satisfied_mean.no.emotion <- mean.no.emotion
+emotions.results.permutation.correction$satisfied_mean.emotion <- mean.emotion
+emotions.results.permutation.correction$satisfied_sd.no.emotion <- sd.no.emotion
+emotions.results.permutation.correction$satisfied_sd.emotion <- sd.emotion
+
+emotions.results.permutation.correction[,c("satisfied_p.value"), drop=FALSE]
+```
+
+### amused
+
+```{r}
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+
+for (process in collaborative.processes) {
+
+  observed.mean.difference <- mean(as.numeric(amused.table[process,])) - mean(as.numeric(non.amused.table[process,]))
+  observed.mean.difference
+  
+  random.mean.differences <- c(observed.mean.difference)
+  
+  whole.sample <- c(as.numeric(amused.table[process,]),as.numeric(non.amused.table[process,])) #put together the two samples
+  
+  for (i in 1:number_of_permutations) {
+    
+    random.sample <- sample(whole.sample) #randomize the sample
+    random.treatment.sample <- random.sample[1:length(as.numeric(amused.table[process,]))] #select new treatment sample
+    random.control.sample <- random.sample[(1+length(as.numeric(amused.table[process,]))):length(random.sample)] #select new control sample
+    random.mean.differences <- c(random.mean.differences,mean(random.treatment.sample)-mean(random.control.sample))
+  
+  }
+  
+    results <- c(results, sum(abs(random.mean.differences) >= abs(observed.mean.difference)) / length(random.mean.differences))
+    mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.amused.table[process,])))
+    mean.emotion <- c(mean.emotion,mean(as.numeric(amused.table[process,])))
+    sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.amused.table[process,])))
+    sd.emotion <- c(sd.emotion,sd(as.numeric(amused.table[process,])))
+    
+    #graphs
+    hist(random.mean.differences, main = paste0("Sampling distribution ",process), xlab = "Mean difference", prob = F, col = "darkred")
+    abline(v = observed.mean.difference, col = "blue", lwd = 2)
+    
+}
+```
+
+```{r}
+emotions.results.permutation.correction$amused_p.value <- p.adjust(results, method="BH")
+emotions.results.permutation.correction$amused_mean.no.emotion <- mean.no.emotion
+emotions.results.permutation.correction$amused_mean.emotion <- mean.emotion
+emotions.results.permutation.correction$amused_sd.no.emotion <- sd.no.emotion
+emotions.results.permutation.correction$amused_sd.emotion <- sd.emotion
+
+emotions.results.permutation.correction[,c("amused_p.value"), drop=FALSE]
+```
+
+### relaxed
+
+```{r}
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+
+for (process in collaborative.processes) {
+
+  observed.mean.difference <- mean(as.numeric(relaxed.table[process,])) - mean(as.numeric(non.relaxed.table[process,]))
+  observed.mean.difference
+  
+  random.mean.differences <- c(observed.mean.difference)
+  
+  whole.sample <- c(as.numeric(relaxed.table[process,]),as.numeric(non.relaxed.table[process,])) #put together the two samples
+  
+  for (i in 1:number_of_permutations) {
+    
+    random.sample <- sample(whole.sample) #randomize the sample
+    random.treatment.sample <- random.sample[1:length(as.numeric(relaxed.table[process,]))] #select new treatment sample
+    random.control.sample <- random.sample[(1+length(as.numeric(relaxed.table[process,]))):length(random.sample)] #select new control sample
+    random.mean.differences <- c(random.mean.differences,mean(random.treatment.sample)-mean(random.control.sample))
+  
+  }
+  
+    results <- c(results, sum(abs(random.mean.differences) >= abs(observed.mean.difference)) / length(random.mean.differences))
+    mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.relaxed.table[process,])))
+    mean.emotion <- c(mean.emotion,mean(as.numeric(relaxed.table[process,])))
+    sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.relaxed.table[process,])))
+    sd.emotion <- c(sd.emotion,sd(as.numeric(relaxed.table[process,])))
+    
+    #graphs
+    hist(random.mean.differences, main = paste0("Sampling distribution ",process), xlab = "Mean difference", prob = F, col = "darkred")
+    abline(v = observed.mean.difference, col = "blue", lwd = 2)
+    
+}
+```
+
+```{r}
+emotions.results.permutation.correction$relaxed_p.value <- p.adjust(results, method="BH")
+emotions.results.permutation.correction$relaxed_mean.no.emotion <- mean.no.emotion
+emotions.results.permutation.correction$relaxed_mean.emotion <- mean.emotion
+emotions.results.permutation.correction$relaxed_sd.no.emotion <- sd.no.emotion
+emotions.results.permutation.correction$relaxed_sd.emotion <- sd.emotion
+
+emotions.results.permutation.correction[,c("relaxed_p.value"), drop=FALSE]
+```
+
+### confident
+
+```{r}
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+
+for (process in collaborative.processes) {
+
+  observed.mean.difference <- mean(as.numeric(confident.table[process,])) - mean(as.numeric(non.confident.table[process,]))
+  observed.mean.difference
+  
+  random.mean.differences <- c(observed.mean.difference)
+  
+  whole.sample <- c(as.numeric(confident.table[process,]),as.numeric(non.confident.table[process,])) #put together the two samples
+  
+  for (i in 1:number_of_permutations) {
+    
+    random.sample <- sample(whole.sample) #randomize the sample
+    random.treatment.sample <- random.sample[1:length(as.numeric(confident.table[process,]))] #select new treatment sample
+    random.control.sample <- random.sample[(1+length(as.numeric(confident.table[process,]))):length(random.sample)] #select new control sample
+    random.mean.differences <- c(random.mean.differences,mean(random.treatment.sample)-mean(random.control.sample))
+  
+  }
+  
+    results <- c(results, sum(abs(random.mean.differences) >= abs(observed.mean.difference)) / length(random.mean.differences))
+    mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.confident.table[process,])))
+    mean.emotion <- c(mean.emotion,mean(as.numeric(confident.table[process,])))
+    sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.confident.table[process,])))
+    sd.emotion <- c(sd.emotion,sd(as.numeric(confident.table[process,])))
+    
+    #graphs
+    hist(random.mean.differences, main = paste0("Sampling distribution ",process), xlab = "Mean difference", prob = F, col = "darkred")
+    abline(v = observed.mean.difference, col = "blue", lwd = 2)
+    
+}
+```
+
+```{r}
+emotions.results.permutation.correction$confident_p.value <- p.adjust(results, method="BH")
+emotions.results.permutation.correction$confident_mean.no.emotion <- mean.no.emotion
+emotions.results.permutation.correction$confident_mean.emotion <- mean.emotion
+emotions.results.permutation.correction$confident_sd.no.emotion <- sd.no.emotion
+emotions.results.permutation.correction$confident_sd.emotion <- sd.emotion
+
+emotions.results.permutation.correction[,c("confident_p.value"), drop=FALSE]
+```
+
+### confused
+
+```{r}
+results <- c()
+mean.no.emotion <- c()
+mean.emotion <- c()
+sd.no.emotion <- c()
+sd.emotion <- c()
+
+for (process in collaborative.processes) {
+
+  observed.mean.difference <- mean(as.numeric(confused.table[process,])) - mean(as.numeric(non.confused.table[process,]))
+  observed.mean.difference
+  
+  random.mean.differences <- c(observed.mean.difference)
+  
+  whole.sample <- c(as.numeric(confused.table[process,]),as.numeric(non.confused.table[process,])) #put together the two samples
+  
+  for (i in 1:number_of_permutations) {
+    
+    random.sample <- sample(whole.sample) #randomize the sample
+    random.treatment.sample <- random.sample[1:length(as.numeric(confused.table[process,]))] #select new treatment sample
+    random.control.sample <- random.sample[(1+length(as.numeric(confused.table[process,]))):length(random.sample)] #select new control sample
+    random.mean.differences <- c(random.mean.differences,mean(random.treatment.sample)-mean(random.control.sample))
+  
+  }
+  
+    results <- c(results, sum(abs(random.mean.differences) >= abs(observed.mean.difference)) / length(random.mean.differences))
+    mean.no.emotion <- c(mean.no.emotion,mean(as.numeric(non.confused.table[process,])))
+    mean.emotion <- c(mean.emotion,mean(as.numeric(confused.table[process,])))
+    sd.no.emotion <- c(sd.no.emotion,sd(as.numeric(non.confused.table[process,])))
+    sd.emotion <- c(sd.emotion,sd(as.numeric(confused.table[process,])))
+    
+    #graphs
+    hist(random.mean.differences, main = paste0("Sampling distribution ",process), xlab = "Mean difference", prob = F, col = "darkred")
+    abline(v = observed.mean.difference, col = "blue", lwd = 2)
+    
+}
+```
+
+```{r}
+emotions.results.permutation.correction$confused_p.value <- p.adjust(results, method="BH")
+emotions.results.permutation.correction$confused_mean.no.emotion <- mean.no.emotion
+emotions.results.permutation.correction$confused_mean.emotion <- mean.emotion
+emotions.results.permutation.correction$confused_sd.no.emotion <- sd.no.emotion
+emotions.results.permutation.correction$confused_sd.emotion <- sd.emotion
+
+emotions.results.permutation.correction[,c("confused_p.value"), drop=FALSE]
+```
+
+## Export
+
+```{r}
+#Exporting results in .xlsx file
+
+write.xlsx(emotions.results.permutation.correction, paste0("results_emitter",toString(max.window.size),".xlsx")) 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
