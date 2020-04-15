@@ -6,9 +6,10 @@ date: "March 24th, 2020"
 output:
   html_document:
     df_print: paged
+    toc: TRUE
   html_notebook: default
   pdf_document: default
-  toc: TRUE
+  
 ---
 
 <style type="text/css">
