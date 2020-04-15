@@ -1,6 +1,6 @@
 ---
 title: "<b> EATMINT1 - Sharing emotions generates online adaptative collaborative acts<br></b>"
-subtitle: "<b>Analysis 3 : debriefing emotions</b>"
+subtitle: "<b>Analysis 3 : debriefing emotions </b>"
 author: "Sunny Avry"
 date: "March 24th, 2020"
 output:

@@ -1,0 +1,559 @@
+---
+title: "<b> EATMINT1 - Sharing emotions contributes to regulating collaborative intentions in group problem-solving<b>"
+subtitle: "<b>Descriptive statistics </b>"
+author: "Sunny Avry"
+date: "March 28th, 2019"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+  html_notebook: default
+  pdf_document: default
+  
+---
+
+<style type="text/css">
+
+h1.title {
+  font-size: 30px;
+}
+</style>
+
+```{r message=FALSE, warning=FALSE}
+library(xlsx);library(dplyr);library(lubridate)
+```
+
+```{r}
+options(scipen=999) #remove scientific notation
+data <- read.csv2("taux_utilisation_actes.csv")
+data_eat <- data[data$eat == "Oui",]
+data_eat
+data_collaboration_duration <- read.csv2("timing_collaboration.csv")
+data_collaboration_duration
+```
+
+## Global variables
+```{r}
+#window size
+max.window.size <- 5 #size of the window = number of collaborative acts per window
+max.window.size
+
+#dyad having used the emotion awareness tool (eat condition) for sharing their emotions 
+dyads_eat <- c(
+"D02",
+"D05",
+"D07",
+"D09",
+"D13",
+"D16",
+"D21",
+"D23",
+"D26",
+"D27",
+"D29")
+
+#participants in eat condition
+participants_eat <- c(
+"D02P01",
+"D02P02",
+"D05P01",
+"D05P02",
+"D07P01",
+"D07P02",
+"D09P01",
+"D09P02",
+"D13P01",
+"D13P02",
+"D16P01",
+"D16P02",
+"D21P01",
+"D21P02",
+"D23P01",
+"D23P02",
+"D26P01",
+"D26P02",
+"D27P01",
+"D27P02",
+"D29P01",
+"D29P02")
+
+#participants in no-eat condition
+participants_no_eat <- c(
+"D04P01",
+"D04P02",
+"D06P01",
+"D06P02",
+"D08P01",
+"D08P02",
+"D10P01",
+"D10P02",
+"D12P01",
+"D12P02",
+"D15P01",
+"D15P02",
+"D20P01",
+"D20P02",
+"D24P01",
+"D24P02")
+
+#emotions displayed during the collaborative problem-solving
+
+emotions <- c(
+"interested",
+"focused",
+"delighted",
+"satisfied",
+"confident",
+"amused",
+"relieved",
+"relaxed",
+"confused",
+"stressed",
+"dissatisfied",
+"annoyed",
+"frustrated",
+"grateful",
+"disappointed",
+"empathic",
+"bored",
+"surprised",
+"puzzled",
+"anxious",
+"impatient")
+
+#All collaborative acts emitted by participants
+
+collaborative.processes <- c(
+"accept",
+"agree",
+"check.comprehension",
+"check.reception",
+"coordinate.teamwork",
+"disagree",
+"elicit.opinion",
+"elicit.partner.information",
+"elicit.proposition",
+"elicit.recall",
+"elicit.task.information",
+"give.explanation",
+"give.opinion.against",
+"give.opinion.for",
+"give.proposition",
+"give.recall",
+"give.self.information",
+"give.task.information",
+"incorporate",
+"manage.task",
+"other",
+"outside.activity",
+"relax.atmosphere",
+"show.active.listening",
+"show.reflection",
+"show.hostility",
+"show.solidarity",
+"tool.discourse",
+"use.social.convention")
+```
+
+# Emotions
+
+## Total number of emotions
+```{r}
+overall.emotions.occurences <-  sum(data$shared.emotion != "") 
+paste("total number of emotions =",overall.emotions.occurences)
+```
+
+## Number of occurences of the different emotions
+```{r}
+
+emotions.occurences.per.category <- c()
+for (emotion in emotions){
+  emotions.occurences.per.category[emotion] <- sum(data$shared.emotion == emotion)
+}
+emotions.occurences.per.category.sorted <- sort(emotions.occurences.per.category, decreasing = TRUE)
+print("number of emotion per category: ")
+emotions.occurences.per.category.sorted
+```
+
+
+## Number of emotions per participant
+```{r}
+
+emotions.occurences.per.participant <- c()
+for (participant in participants_eat){
+  emotions.occurences.per.participant[participant] <- sum(data$participant == participant & data$shared.emotion != "")
+}
+emotions.occurences.per.participant.sorted <- sort(emotions.occurences.per.participant, decreasing = TRUE)
+print("number of emotion per participant: ")
+emotions.occurences.per.participant.sorted
+```
+
+## Difference in the number of shared emotions in a same dyad
+
+```{r}
+
+d2 <- abs(emotions.occurences.per.participant.sorted[c("D02P01")]-emotions.occurences.per.participant.sorted[c("D02P02")])
+d5 <- abs(emotions.occurences.per.participant.sorted[c("D05P01")]-emotions.occurences.per.participant.sorted[c("D05P02")])
+d7 <- abs(emotions.occurences.per.participant.sorted[c("D07P01")]-emotions.occurences.per.participant.sorted[c("D07P02")])
+d9 <- abs(emotions.occurences.per.participant.sorted[c("D09P01")]-emotions.occurences.per.participant.sorted[c("D09P02")])
+d13 <- abs(emotions.occurences.per.participant.sorted[c("D13P01")]-emotions.occurences.per.participant.sorted[c("D13P02")])
+d16 <- abs(emotions.occurences.per.participant.sorted[c("D16P01")]-emotions.occurences.per.participant.sorted[c("D16P02")])
+d21 <- abs(emotions.occurences.per.participant.sorted[c("D21P01")]-emotions.occurences.per.participant.sorted[c("D21P02")])
+d23 <- abs(emotions.occurences.per.participant.sorted[c("D23P01")]-emotions.occurences.per.participant.sorted[c("D23P02")])     
+d26 <- abs(emotions.occurences.per.participant.sorted[c("D26P01")]-emotions.occurences.per.participant.sorted[c("D26P02")])
+d27 <- abs(emotions.occurences.per.participant.sorted[c("D27P01")]-emotions.occurences.per.participant.sorted[c("D27P02")])  
+d29 <- abs(emotions.occurences.per.participant.sorted[c("D29P01")]-emotions.occurences.per.participant.sorted[c("D29P02")])   
+
+
+emotions.differences.per.dyad <- c(d2,d5,d7,d9,d13,d16,d21,d23,d26,d27,d29)
+emotions.differences.per.dyad
+print("mean: ")
+mean(emotions.differences.per.dyad)
+print("sd: ")
+sd(emotions.differences.per.dyad)
+```
+
+## Frequency of the emotional sharing
+
+```{r}
+
+#"number of emotion per dyad: "
+#D09 D26 D21 D13 D16 D29 D27 D07 D02 D23 D05 
+#45  33  31  30  22  21  20  18  16  14  13 
+
+
+#D02
+len <- length(data_eat[data_eat$dyad == "D02",c("unix.time.video")])
+d02 <- (data_eat[data_eat$dyad == "D02",c("unix.time.video")][len] - data_eat[data_eat$dyad == "D02",c("unix.time.video")][1]) / 16
+seconds_to_period(d02)
+
+#D05
+len <- length(data_eat[data_eat$dyad == "D05",c("unix.time.video")])
+d05 <- (data_eat[data_eat$dyad == "D05",c("unix.time.video")][len] - data_eat[data_eat$dyad == "D05",c("unix.time.video")][1]) / 13
+seconds_to_period(d05)
+
+#D07
+len <- length(data_eat[data_eat$dyad == "D07",c("unix.time.video")])
+d07 <- (data_eat[data_eat$dyad == "D07",c("unix.time.video")][len] - data_eat[data_eat$dyad == "D07",c("unix.time.video")][1]) / 18
+seconds_to_period(d07)
+
+#D09
+len <- length(data_eat[data_eat$dyad == "D09",c("unix.time.video")])
+d09 <- (data_eat[data_eat$dyad == "D09",c("unix.time.video")][len] - data_eat[data_eat$dyad == "D09",c("unix.time.video")][1]) / 45
+seconds_to_period(d09)
+
+#D13
+len <- length(data_eat[data_eat$dyad == "D13",c("unix.time.video")])
+d13 <- (data_eat[data_eat$dyad == "D13",c("unix.time.video")][len] - data_eat[data_eat$dyad == "D13",c("unix.time.video")][1]) / 30
+seconds_to_period(d13)
+
+#D16
+len <- length(data_eat[data_eat$dyad == "D16",c("unix.time.video")])
+d16 <- (data_eat[data_eat$dyad == "D16",c("unix.time.video")][len] - data_eat[data_eat$dyad == "D16",c("unix.time.video")][1]) / 22
+seconds_to_period(d16)
+
+#D21
+len <- length(data_eat[data_eat$dyad == "D21",c("unix.time.video")])
+d21 <- (data_eat[data_eat$dyad == "D21",c("unix.time.video")][len] - data_eat[data_eat$dyad == "D21",c("unix.time.video")][1]) / 31
+seconds_to_period(d21)
+
+#D23
+len <- length(data_eat[data_eat$dyad == "D23",c("unix.time.video")])
+d23 <- (data_eat[data_eat$dyad == "D23",c("unix.time.video")][len] - data_eat[data_eat$dyad == "D23",c("unix.time.video")][1]) / 14
+seconds_to_period(d23)
+
+#D26
+len <- length(data_eat[data_eat$dyad == "D26",c("unix.time.video")])
+d26 <- (data_eat[data_eat$dyad == "D26",c("unix.time.video")][len] - data_eat[data_eat$dyad == "D26",c("unix.time.video")][1]) / 22
+seconds_to_period(d26)
+
+#D27
+len <- length(data_eat[data_eat$dyad == "D27",c("unix.time.video")])
+d27 <- (data_eat[data_eat$dyad == "D27",c("unix.time.video")][len] - data_eat[data_eat$dyad == "D27",c("unix.time.video")][1]) / 20
+seconds_to_period(d27)
+
+#D29
+len <- length(data_eat[data_eat$dyad == "D29",c("unix.time.video")])
+d29 <- (data_eat[data_eat$dyad == "D29",c("unix.time.video")][len] - data_eat[data_eat$dyad == "D29",c("unix.time.video")][1]) / 21
+seconds_to_period(d29)
+
+
+time.sharing.emotions <- c(d02,d05,d07,d09,d13,d16,d21,d23,d26,d27,d29)
+print("mean: ")
+seconds_to_period(mean(time.sharing.emotions))
+print("sd: ")
+seconds_to_period(sd(time.sharing.emotions))
+
+```
+
+## Number of emotions per dyad
+
+```{r}
+emotions.occurences.per.dyad <- c()
+
+for (dyad in dyads_eat){
+  emotions.occurences.per.dyad[dyad] <- sum(data$dyad == dyad & data$shared.emotion != "")
+}
+emotions.occurences.per.dyad.sorted <- sort(emotions.occurences.per.dyad, decreasing = TRUE)
+sum(emotions.occurences.per.dyad.sorted <- sort(emotions.occurences.per.dyad, decreasing = TRUE))
+print("number of emotion per dyad: ")
+emotions.occurences.per.dyad.sorted
+print("mean: ")
+mean(emotions.occurences.per.dyad.sorted)
+print("standard deviation: ")
+sd(emotions.occurences.per.dyad.sorted)
+```
+
+## Number of emotions per category per participant
+```{r}
+emotions.occurences.per.category.per.participant <- data.frame(row.names = participants_eat)
+
+x <- c()
+for (i in emotions) {
+  for(j in participants_eat) {
+   x[j] <- c(sum(data$shared.emotion == i & data$participant == j))
+  }
+  emotions.occurences.per.category.per.participant[i] <- x
+}
+emotions.occurences.per.category.per.participant
+```
+
+## Averaged number of each emotion
+```{r}
+
+averaged.number.of.each.emotion <- c()
+for (i in emotions) {
+  averaged.number.of.each.emotion[i] <- mean(emotions.occurences.per.category.per.participant[,i][emotions.occurences.per.category.per.participant[,i] != 0])
+  }
+averaged.number.of.each.emotion.sorted <- sort(averaged.number.of.each.emotion, decreasing = TRUE)
+averaged.number.of.each.emotion.sorted
+```
+
+
+## Number of participants with at least one emotion for each emotion
+```{r}
+participants_eat.per.emotion <- c("interested" = sum((emotions.occurences.per.category.per.participant$interested != 0) == TRUE),
+                             "focused" = sum((emotions.occurences.per.category.per.participant$focused != 0) == TRUE),
+                             "delighted" = sum((emotions.occurences.per.category.per.participant$delighted != 0) == TRUE),
+                             "satisfied" = sum((emotions.occurences.per.category.per.participant$satisfied != 0) == TRUE),
+                             "confident" = sum((emotions.occurences.per.category.per.participant$confident != 0) == TRUE),
+                             "amused" = sum((emotions.occurences.per.category.per.participant$amused != 0) == TRUE),
+                             "relieved" = sum((emotions.occurences.per.category.per.participant$relieved != 0) == TRUE),
+                             "relaxed" = sum((emotions.occurences.per.category.per.participant$relaxed != 0) == TRUE),
+                             "confused" = sum((emotions.occurences.per.category.per.participant$confused != 0) == TRUE),
+                             "stressed" = sum((emotions.occurences.per.category.per.participant$stressed != 0) == TRUE),
+                             "dissatisfied" = sum((emotions.occurences.per.category.per.participant$dissatisfied != 0) == TRUE),
+                             "annoyed" = sum((emotions.occurences.per.category.per.participant$annoyed != 0) == TRUE),
+                             "frustrated" = sum((emotions.occurences.per.category.per.participant$frustrated != 0) == TRUE),
+                             "grateful" = sum((emotions.occurences.per.category.per.participant$grateful != 0) == TRUE),
+                             "disappointed" = sum((emotions.occurences.per.category.per.participant$disappointed != 0) == TRUE),
+                             "empathic" = sum((emotions.occurences.per.category.per.participant$empathic != 0) == TRUE),
+                             "bored" = sum((emotions.occurences.per.category.per.participant$bored != 0) == TRUE),
+                             "surprised" = sum((emotions.occurences.per.category.per.participant$surprised != 0) == TRUE),
+                             "puzzled" = sum((emotions.occurences.per.category.per.participant$puzzled != 0) == TRUE),
+                             "anxious" = sum((emotions.occurences.per.category.per.participant$anxious != 0) == TRUE),
+                             "impatient" = sum((emotions.occurences.per.category.per.participant$impatient != 0) == TRUE))
+participants_eat.per.emotion.sorted <- sort(participants_eat.per.emotion, decreasing = TRUE)
+participants_eat.per.emotion.sorted
+```
+
+# Number of positive and negative emotions per dyad
+
+```{r}
+
+negative.emotions.occurences.per.dyad <- c()
+
+for (dyad in dyads_eat){
+  negative.emotions.occurences.per.dyad[dyad] <- sum(data$dyad == dyad 
+                                                     & (data$shared.emotion == "confused"
+                                                     | data$shared.emotion == "frustrated"
+                                                     | data$shared.emotion == "anxious"
+                                                     | data$shared.emotion == "stressed"
+                                                     | data$shared.emotion == "dissatisfied"
+                                                     | data$shared.emotion == "annoyed"
+                                                     | data$shared.emotion == "disappointed"
+                                                     | data$shared.emotion == "bored"
+                                                     | data$shared.emotion == "puzzled"
+                                                     | data$shared.emotion == "impatient"))
+}
+negative.emotions.occurences.per.dyad
+sum(negative.emotions.occurences.per.dyad)
+
+positive.emotions.occurences.per.dyad <- c()
+
+for (dyad in dyads_eat){
+  positive.emotions.occurences.per.dyad[dyad] <- sum(data$dyad == dyad 
+                                                     & (data$shared.emotion == "focused"
+                                                     | data$shared.emotion == "interested"
+                                                     | data$shared.emotion == "confident"
+                                                     | data$shared.emotion == "satisfied"
+                                                     | data$shared.emotion == "amused"
+                                                     | data$shared.emotion == "delighted"
+                                                     | data$shared.emotion == "relaxed"
+                                                     | data$shared.emotion == "relieved"
+                                                     | data$shared.emotion == "empathic"
+                                                     | data$shared.emotion == "grateful"
+                                                     | data$shared.emotion == "surprised"))
+}
+positive.emotions.occurences.per.dyad
+sum(positive.emotions.occurences.per.dyad)
+```
+
+# Number of positive and negative emotions per participant
+
+```{r}
+
+negative.emotions.occurences.per.participant <- c()
+
+for (participant in participants_eat){
+  negative.emotions.occurences.per.participant[participant] <- sum(data$participant == participant 
+                                                     & (data$shared.emotion == "confused"
+                                                     | data$shared.emotion == "frustrated"
+                                                     | data$shared.emotion == "anxious"
+                                                     | data$shared.emotion == "stressed"
+                                                     | data$shared.emotion == "dissatisfied"
+                                                     | data$shared.emotion == "annoyed"
+                                                     | data$shared.emotion == "disappointed"
+                                                     | data$shared.emotion == "bored"
+                                                     | data$shared.emotion == "puzzled"
+                                                     | data$shared.emotion == "impatient"))
+}
+negative.emotions.occurences.per.participant
+sum(negative.emotions.occurences.per.participant)
+
+positive.emotions.occurences.per.participant <- c()
+
+for (participant in participants_eat){
+  positive.emotions.occurences.per.participant[participant] <- sum(data$participant == participant 
+                                                      & (data$shared.emotion == "focused"
+                                                     | data$shared.emotion == "interested"
+                                                     | data$shared.emotion == "confident"
+                                                     | data$shared.emotion == "satisfied"
+                                                     | data$shared.emotion == "amused"
+                                                     | data$shared.emotion == "delighted"
+                                                     | data$shared.emotion == "relaxed"
+                                                     | data$shared.emotion == "relieved"
+                                                     | data$shared.emotion == "empathic"
+                                                     | data$shared.emotion == "grateful"
+                                                     | data$shared.emotion == "surprised"))
+}
+positive.emotions.occurences.per.participant
+sum(positive.emotions.occurences.per.participant)
+```
+
+# Collaborative acts
+
+
+## Total time of collaboration
+
+```{r}
+
+collaboration_duration <- seconds_to_period(data_collaboration_duration$collaboration.duration/1000)
+names(collaboration_duration) <- c("D02","D05", "D07", "D09", "D13","D16", "D21", "D23", "D26", "D27", "D29")
+
+collaboration_duration
+
+print("mean: ")
+seconds_to_period(mean(data_collaboration_duration$collaboration.duration/1000))
+
+print("sd: ")
+seconds_to_period(sd(data_collaboration_duration$collaboration.duration/1000))
+```
+
+
+## Total number of collaborative acts
+```{r}
+
+overall.collaborative.processes.occurences <- length(which(data$eat == "Oui"))
+overall.collaborative.processes.occurences
+```
+## Number of collaborative acts per participant
+```{r}
+collaborative.processes.occurences.per.participant <- c()
+for (participant in participants_eat){
+  collaborative.processes.occurences.per.participant[participant] <- sum(data$participant == participant)
+}
+collaborative.processes.occurences.per.participant.sorted <- sort(collaborative.processes.occurences.per.participant, decreasing = TRUE)
+print("number of emotion per participant: ")
+collaborative.processes.occurences.per.participant.sorted
+```
+
+## Number of collaborative acts per dyad
+```{r}
+collaborative.processes.occurences.per.dyad <- c()
+for (dyad in dyads_eat){
+  collaborative.processes.occurences.per.dyad[dyad] <- sum(data$dyad == dyad)
+}
+collaborative.processes.occurences.per.dyad.sorted <- sort(collaborative.processes.occurences.per.dyad, decreasing = TRUE)
+print("number of emotion per dyad: ")
+collaborative.processes.occurences.per.dyad.sorted
+print("mean: ")
+mean(collaborative.processes.occurences.per.dyad.sorted)
+print("sd: ")
+sd(collaborative.processes.occurences.per.dyad.sorted)
+```
+
+
+
+## Averaged number of collaborative acts
+```{r}
+mean(collaborative.processes.occurences.per.participant.sorted)
+sd(collaborative.processes.occurences.per.participant.sorted)
+```
+## Number of collaborative acts per category
+```{r}
+collaborative.processes.occurences.per.category <- c()
+for (i in collaborative.processes) {
+   collaborative.processes.occurences.per.category[i] <- sum(data_eat$collaborative.processes == i)
+  }
+collaborative.processes.occurences.per.category
+collaborative.processes.occurences.per.category.sorted <- sort(collaborative.processes.occurences.per.category, decreasing = TRUE)
+collaborative.processes.occurences.per.category.sorted
+sum(collaborative.processes.occurences.per.category.sorted)
+```
+## Averaged percentages of collaborative acts per category
+```{r}
+averaged.percentage.of.collaborative.processes.per.category <- sort(collaborative.processes.occurences.per.category/5141, decreasing = TRUE)
+averaged.percentage.of.collaborative.processes.per.category
+```
+## Duration of collaborative acts per dyad
+```{r}
+average.time.collaboration.per.dyad <- c()
+for (i in dyads_eat) {
+   average.time.collaboration.per.dyad[i] <- sum(data$duration[data$dyad == i])
+  }
+average.time.collaboration.per.dyad
+sum(data_eat$duration) / 5141
+mean(data_eat$duration)
+sd(data_eat$duration)
+sum(average.time.collaboration.per.dyad) / 5141
+
+seconds_to_period(mean(average.time.collaboration.per.dyad))
+seconds_to_period(sd(average.time.collaboration.per.dyad))
+```
+## Number of collaborative acts per category per participant
+```{r}
+collaborative.processes.occurences.per.category.per.participant <- data.frame(row.names = participants_eat)
+collaborative.processes.occurences.per.category.per.participant.percentage <- data.frame(row.names = participants_eat)
+
+x <- c()
+for (i in collaborative.processes) {
+  for(j in participants_eat) {
+   x[j] <- c(sum(data$collaborative.processes == i & data$participant == j))
+  }
+  collaborative.processes.occurences.per.category.per.participant[i] <- x
+}
+collaborative.processes.occurences.per.category.per.participant
+
+x <- c()
+for (i in collaborative.processes) {
+  for(j in participants_eat) {
+   x[j] <- c(sum(data$collaborative.processes == i & data$participant == j)/sum(data$participant == j))
+  }
+  collaborative.processes.occurences.per.category.per.participant.percentage[i] <- x
+}
+collaborative.processes.occurences.per.category.per.participant.percentage
+```
+
+
+

@@ -1,0 +1,1137 @@
+---
+title: "<b> EATMINT1 - Sharing emotions contributes to regulating collaborative intentions in group problem-solving<br></b>"
+subtitle: "<b>Emotion per collaborative phases </b>"
+author: "Sunny Avry"
+date: "April 2nd, 2020"
+output:
+  html_document:
+    toc: true
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+  
+---
+
+<style type="text/css">
+
+h1.title {
+  font-size: 30px;
+}
+</style>
+
+## Libraries
+```{r message=FALSE, warning=FALSE}
+library(xlsx);library(dplyr);library(lubridate)
+```
+
+```{r}
+options(scipen=999) #remove scientific notation
+data <- read.csv2("taux_utilisation_actes.csv")
+data_eat <- data[data$eat == "Oui",]
+data_eat
+```
+
+## Global variables
+```{r}
+#window size
+max.window.size <- 5 #size of the window = number of collaborative acts per window
+max.window.size
+
+#dyad having used the emotion awareness tool (eat condition) for sharing their emotions 
+dyads_eat <- c(
+"D02",
+"D05",
+"D07",
+"D09",
+"D13",
+"D16",
+"D21",
+"D23",
+"D26",
+"D27",
+"D29")
+
+#participants in eat condition
+participants_eat <- c(
+"D02P01",
+"D02P02",
+"D05P01",
+"D05P02",
+"D07P01",
+"D07P02",
+"D09P01",
+"D09P02",
+"D13P01",
+"D13P02",
+"D16P01",
+"D16P02",
+"D21P01",
+"D21P02",
+"D23P01",
+"D23P02",
+"D26P01",
+"D26P02",
+"D27P01",
+"D27P02",
+"D29P01",
+"D29P02")
+
+#participants in no-eat condition
+participants_no_eat <- c(
+"D04P01",
+"D04P02",
+"D06P01",
+"D06P02",
+"D08P01",
+"D08P02",
+"D10P01",
+"D10P02",
+"D12P01",
+"D12P02",
+"D15P01",
+"D15P02",
+"D20P01",
+"D20P02",
+"D24P01",
+"D24P02")
+
+# #emotions displayed during the collaborative problem-solving
+# emotions <- c(
+# "interested",
+# "focused",
+# "delighted",
+# "satisfied",
+# "confident",
+# "amused",
+# "relieved",
+# "relaxed",
+# "confused",
+# "stressed",
+# "dissatisfied",
+# "annoyed",
+# "frustrated",
+# "grateful",
+# "disappointed",
+# "empathic",
+# "bored",
+# "surprised",
+# "puzzled",
+# "anxious",
+# "impatient")
+
+#All collaborative acts emitted by participants
+
+# collaborative.processes <- c(
+# "accept",
+# "agree",
+# "check.comprehension",
+# "check.reception",
+# "coordinate.teamwork",
+# "disagree",
+# "elicit.opinion",
+# "elicit.partner.information",
+# "elicit.proposition",
+# "elicit.recall",
+# "elicit.task.information",
+# "give.explanation",
+# "give.opinion.against",
+# "give.opinion.for",
+# "give.proposition",
+# "give.recall",
+# "give.self.information",
+# "give.task.information",
+# "incorporate",
+# "manage.task",
+# "other",
+# "outside.activity",
+# "relax.atmosphere",
+# "show.active.listening",
+# "show.reflection",
+# "show.hostility",
+# "show.solidarity",
+# "tool.discourse",
+# "use.social.convention")
+```
+
+```{r}
+#All collaborative acts emitted by participants representing at least 4 percents of the total
+
+collaborative.processes <- c(
+"accept",
+"agree",
+"give.opinion.for",
+"give.proposition",
+"give.self.information",
+"give.task.information",
+"manage.task",
+"relax.atmosphere",
+"show.reflection",
+"tool.discourse")
+
+
+#emotions displayed during the collaborative problem-solving representating at least 
+emotions <- c(
+"interested",
+"focused",
+"delighted",
+"satisfied",
+"amused",
+"relaxed")
+```
+
+Phase 1 represented 40% of the time
+Phase 2 represented 40% of the time
+Phase 3 represented 20% of the time
+
+
+```{r}
+n <- matrix(data=NA,nrow=3,ncol=0)
+number.of.emotion.per.phase <- data.frame(n)
+rownames(number.of.emotion.per.phase) <- c("phase1", "phase2","phase3")
+number.of.emotion.per.phase
+```
+
+# d02
+
+```{r}
+d02 <- data_eat[data_eat$dyad == "D02",]
+
+elapsed_time_d02 <- sum(d02$duration)
+```
+
+## interested
+```{r}
+phase1_end_time_d02 <- elapsed_time_d02 * (2/5)
+phase2_end_time_d02 <- phase1_end_time_d02 * 2
+phase3_end_time_d02 <- elapsed_time_d02
+
+interested <- c(sum(d02[d02$elapsed.time <= phase1_end_time_d02,"shared.emotion"] == "interested"),
+sum(d02[d02$elapsed.time > phase1_end_time_d02 & d02$elapsed.time <= phase2_end_time_d02 ,"shared.emotion"] == "interested"),
+sum(d02[d02$elapsed.time > phase2_end_time_d02 & d02$elapsed.time <= phase3_end_time_d02,"shared.emotion"] == "interested"))
+
+number.of.emotion.per.phase$interested <- interested
+```
+
+## focused
+```{r}
+phase1_end_time_d02 <- elapsed_time_d02 * (2/5)
+phase2_end_time_d02 <- phase1_end_time_d02 * 2
+phase3_end_time_d02 <- elapsed_time_d02
+
+focused <- c(sum(d02[d02$elapsed.time <= phase1_end_time_d02,"shared.emotion"] == "focused"),
+sum(d02[d02$elapsed.time > phase1_end_time_d02 & d02$elapsed.time <= phase2_end_time_d02 ,"shared.emotion"] == "focused"),
+sum(d02[d02$elapsed.time > phase2_end_time_d02 & d02$elapsed.time <= phase3_end_time_d02,"shared.emotion"] == "focused"))
+
+number.of.emotion.per.phase$focused <- focused
+```
+
+## delighted
+```{r}
+phase1_end_time_d02 <- elapsed_time_d02 * (2/5)
+phase2_end_time_d02 <- phase1_end_time_d02 * 2
+phase3_end_time_d02 <- elapsed_time_d02
+
+delighted <- c(sum(d02[d02$elapsed.time <= phase1_end_time_d02,"shared.emotion"] == "delighted"),
+sum(d02[d02$elapsed.time > phase1_end_time_d02 & d02$elapsed.time <= phase2_end_time_d02 ,"shared.emotion"] == "delighted"),
+sum(d02[d02$elapsed.time > phase2_end_time_d02 & d02$elapsed.time <= phase3_end_time_d02,"shared.emotion"] == "delighted"))
+
+number.of.emotion.per.phase$delighted <- delighted
+```
+
+## satisfied
+```{r}
+phase1_end_time_d02 <- elapsed_time_d02 * (2/5)
+phase2_end_time_d02 <- phase1_end_time_d02 * 2
+phase3_end_time_d02 <- elapsed_time_d02
+
+satisfied <- c(sum(d02[d02$elapsed.time <= phase1_end_time_d02,"shared.emotion"] == "satisfied"),
+sum(d02[d02$elapsed.time > phase1_end_time_d02 & d02$elapsed.time <= phase2_end_time_d02 ,"shared.emotion"] == "satisfied"),
+sum(d02[d02$elapsed.time > phase2_end_time_d02 & d02$elapsed.time <= phase3_end_time_d02,"shared.emotion"] == "satisfied"))
+
+number.of.emotion.per.phase$satisfied <- satisfied
+```
+
+## amused
+```{r}
+phase1_end_time_d02 <- elapsed_time_d02 * (2/5)
+phase2_end_time_d02 <- phase1_end_time_d02 * 2
+phase3_end_time_d02 <- elapsed_time_d02
+
+amused <- c(sum(d02[d02$elapsed.time <= phase1_end_time_d02,"shared.emotion"] == "amused"),
+sum(d02[d02$elapsed.time > phase1_end_time_d02 & d02$elapsed.time <= phase2_end_time_d02 ,"shared.emotion"] == "amused"),
+sum(d02[d02$elapsed.time > phase2_end_time_d02 & d02$elapsed.time <= phase3_end_time_d02,"shared.emotion"] == "amused"))
+
+number.of.emotion.per.phase$amused <- amused
+```
+
+## relaxed
+```{r}
+phase1_end_time_d02 <- elapsed_time_d02 * (2/5)
+phase2_end_time_d02 <- phase1_end_time_d02 * 2
+phase3_end_time_d02 <- elapsed_time_d02
+
+relaxed <- c(sum(d02[d02$elapsed.time <= phase1_end_time_d02,"shared.emotion"] == "relaxed"),
+sum(d02[d02$elapsed.time > phase1_end_time_d02 & d02$elapsed.time <= phase2_end_time_d02 ,"shared.emotion"] == "relaxed"),
+sum(d02[d02$elapsed.time > phase2_end_time_d02 & d02$elapsed.time <= phase3_end_time_d02,"shared.emotion"] == "relaxed"))
+
+number.of.emotion.per.phase$relaxed <- relaxed
+```
+
+# d05
+
+```{r}
+d05 <- data_eat[data_eat$dyad == "D05",]
+
+elapsed_time_d05 <- sum(d05$duration)
+```
+
+
+## interested
+```{r}
+phase1_end_time_d05 <- elapsed_time_d05 * (2/5)
+phase2_end_time_d05 <- phase1_end_time_d05 * 2
+phase3_end_time_d05 <- elapsed_time_d05
+
+interested <- c(sum(d05[d05$elapsed.time <= phase1_end_time_d05,"shared.emotion"] == "interested"),
+sum(d05[d05$elapsed.time > phase1_end_time_d05 & d05$elapsed.time <= phase2_end_time_d05 ,"shared.emotion"] == "interested"),
+sum(d05[d05$elapsed.time > phase2_end_time_d05 & d05$elapsed.time <= phase3_end_time_d05,"shared.emotion"] == "interested"))
+
+number.of.emotion.per.phase$interested <- number.of.emotion.per.phase$interested + interested
+```
+
+## focused
+```{r}
+phase1_end_time_d05 <- elapsed_time_d05 * (2/5)
+phase2_end_time_d05 <- phase1_end_time_d05 * 2
+phase3_end_time_d05 <- elapsed_time_d05
+
+focused <- c(sum(d05[d05$elapsed.time <= phase1_end_time_d05,"shared.emotion"] == "focused"),
+sum(d05[d05$elapsed.time > phase1_end_time_d05 & d05$elapsed.time <= phase2_end_time_d05 ,"shared.emotion"] == "focused"),
+sum(d05[d05$elapsed.time > phase2_end_time_d05 & d05$elapsed.time <= phase3_end_time_d05,"shared.emotion"] == "focused"))
+
+number.of.emotion.per.phase$focused <- number.of.emotion.per.phase$focused + focused 
+```
+
+## delighted
+```{r}
+phase1_end_time_d05 <- elapsed_time_d05 * (2/5)
+phase2_end_time_d05 <- phase1_end_time_d05 * 2
+phase3_end_time_d05 <- elapsed_time_d05
+
+delighted <- c(sum(d05[d05$elapsed.time <= phase1_end_time_d05,"shared.emotion"] == "delighted"),
+sum(d05[d05$elapsed.time > phase1_end_time_d05 & d05$elapsed.time <= phase2_end_time_d05 ,"shared.emotion"] == "delighted"),
+sum(d05[d05$elapsed.time > phase2_end_time_d05 & d05$elapsed.time <= phase3_end_time_d05,"shared.emotion"] == "delighted"))
+
+number.of.emotion.per.phase$delighted <- number.of.emotion.per.phase$delighted + delighted 
+```
+
+## satisfied
+```{r}
+phase1_end_time_d05 <- elapsed_time_d05 * (2/5)
+phase2_end_time_d05 <- phase1_end_time_d05 * 2
+phase3_end_time_d05 <- elapsed_time_d05
+
+satisfied <- c(sum(d05[d05$elapsed.time <= phase1_end_time_d05,"shared.emotion"] == "satisfied"),
+sum(d05[d05$elapsed.time > phase1_end_time_d05 & d05$elapsed.time <= phase2_end_time_d05 ,"shared.emotion"] == "satisfied"),
+sum(d05[d05$elapsed.time > phase2_end_time_d05 & d05$elapsed.time <= phase3_end_time_d05,"shared.emotion"] == "satisfied"))
+
+number.of.emotion.per.phase$satisfied <- number.of.emotion.per.phase$satisfied + satisfied 
+```
+
+## amused
+```{r}
+phase1_end_time_d05 <- elapsed_time_d05 * (2/5)
+phase2_end_time_d05 <- phase1_end_time_d05 * 2
+phase3_end_time_d05 <- elapsed_time_d05
+
+amused <- c(sum(d05[d05$elapsed.time <= phase1_end_time_d05,"shared.emotion"] == "amused"),
+sum(d05[d05$elapsed.time > phase1_end_time_d05 & d05$elapsed.time <= phase2_end_time_d05 ,"shared.emotion"] == "amused"),
+sum(d05[d05$elapsed.time > phase2_end_time_d05 & d05$elapsed.time <= phase3_end_time_d05,"shared.emotion"] == "amused"))
+
+number.of.emotion.per.phase$amused <- number.of.emotion.per.phase$amused + amused 
+```
+
+## relaxed
+```{r}
+phase1_end_time_d05 <- elapsed_time_d05 * (2/5)
+phase2_end_time_d05 <- phase1_end_time_d05 * 2
+phase3_end_time_d05 <- elapsed_time_d05
+
+relaxed <- c(sum(d05[d05$elapsed.time <= phase1_end_time_d05,"shared.emotion"] == "relaxed"),
+sum(d05[d05$elapsed.time > phase1_end_time_d05 & d05$elapsed.time <= phase2_end_time_d05 ,"shared.emotion"] == "relaxed"),
+sum(d05[d05$elapsed.time > phase2_end_time_d05 & d05$elapsed.time <= phase3_end_time_d05,"shared.emotion"] == "relaxed"))
+
+number.of.emotion.per.phase$relaxed <- number.of.emotion.per.phase$relaxed + relaxed 
+```
+
+# d07
+
+```{r}
+d07 <- data_eat[data_eat$dyad == "D07",]
+
+elapsed_time_d07 <- sum(d07$duration)
+```
+
+
+## interested
+```{r}
+phase1_end_time_d07 <- elapsed_time_d07 * (2/5)
+phase2_end_time_d07 <- phase1_end_time_d07 * 2
+phase3_end_time_d07 <- elapsed_time_d07
+
+interested <- c(sum(d07[d07$elapsed.time <= phase1_end_time_d07,"shared.emotion"] == "interested"),
+sum(d07[d07$elapsed.time > phase1_end_time_d07 & d07$elapsed.time <= phase2_end_time_d07 ,"shared.emotion"] == "interested"),
+sum(d07[d07$elapsed.time > phase2_end_time_d07 & d07$elapsed.time <= phase3_end_time_d07,"shared.emotion"] == "interested"))
+
+number.of.emotion.per.phase$interested <- number.of.emotion.per.phase$interested + interested
+```
+
+## focused
+```{r}
+phase1_end_time_d07 <- elapsed_time_d07 * (2/5)
+phase2_end_time_d07 <- phase1_end_time_d07 * 2
+phase3_end_time_d07 <- elapsed_time_d07
+
+focused <- c(sum(d07[d07$elapsed.time <= phase1_end_time_d07,"shared.emotion"] == "focused"),
+sum(d07[d07$elapsed.time > phase1_end_time_d07 & d07$elapsed.time <= phase2_end_time_d07 ,"shared.emotion"] == "focused"),
+sum(d07[d07$elapsed.time > phase2_end_time_d07 & d07$elapsed.time <= phase3_end_time_d07,"shared.emotion"] == "focused"))
+
+number.of.emotion.per.phase$focused <- number.of.emotion.per.phase$focused + focused 
+```
+
+## delighted
+```{r}
+phase1_end_time_d07 <- elapsed_time_d07 * (2/5)
+phase2_end_time_d07 <- phase1_end_time_d07 * 2
+phase3_end_time_d07 <- elapsed_time_d07
+
+delighted <- c(sum(d07[d07$elapsed.time <= phase1_end_time_d07,"shared.emotion"] == "delighted"),
+sum(d07[d07$elapsed.time > phase1_end_time_d07 & d07$elapsed.time <= phase2_end_time_d07 ,"shared.emotion"] == "delighted"),
+sum(d07[d07$elapsed.time > phase2_end_time_d07 & d07$elapsed.time <= phase3_end_time_d07,"shared.emotion"] == "delighted"))
+
+number.of.emotion.per.phase$delighted <- number.of.emotion.per.phase$delighted + delighted 
+```
+
+## satisfied
+```{r}
+phase1_end_time_d07 <- elapsed_time_d07 * (2/5)
+phase2_end_time_d07 <- phase1_end_time_d07 * 2
+phase3_end_time_d07 <- elapsed_time_d07
+
+satisfied <- c(sum(d07[d07$elapsed.time <= phase1_end_time_d07,"shared.emotion"] == "satisfied"),
+sum(d07[d07$elapsed.time > phase1_end_time_d07 & d07$elapsed.time <= phase2_end_time_d07 ,"shared.emotion"] == "satisfied"),
+sum(d07[d07$elapsed.time > phase2_end_time_d07 & d07$elapsed.time <= phase3_end_time_d07,"shared.emotion"] == "satisfied"))
+
+number.of.emotion.per.phase$satisfied <- number.of.emotion.per.phase$satisfied + satisfied 
+```
+
+## amused
+```{r}
+phase1_end_time_d07 <- elapsed_time_d07 * (2/5)
+phase2_end_time_d07 <- phase1_end_time_d07 * 2
+phase3_end_time_d07 <- elapsed_time_d07
+
+amused <- c(sum(d07[d07$elapsed.time <= phase1_end_time_d07,"shared.emotion"] == "amused"),
+sum(d07[d07$elapsed.time > phase1_end_time_d07 & d07$elapsed.time <= phase2_end_time_d07 ,"shared.emotion"] == "amused"),
+sum(d07[d07$elapsed.time > phase2_end_time_d07 & d07$elapsed.time <= phase3_end_time_d07,"shared.emotion"] == "amused"))
+
+number.of.emotion.per.phase$amused <- number.of.emotion.per.phase$amused + amused 
+```
+
+## relaxed
+```{r}
+phase1_end_time_d07 <- elapsed_time_d07 * (2/5)
+phase2_end_time_d07 <- phase1_end_time_d07 * 2
+phase3_end_time_d07 <- elapsed_time_d07
+
+relaxed <- c(sum(d07[d07$elapsed.time <= phase1_end_time_d07,"shared.emotion"] == "relaxed"),
+sum(d07[d07$elapsed.time > phase1_end_time_d07 & d07$elapsed.time <= phase2_end_time_d07 ,"shared.emotion"] == "relaxed"),
+sum(d07[d07$elapsed.time > phase2_end_time_d07 & d07$elapsed.time <= phase3_end_time_d07,"shared.emotion"] == "relaxed"))
+
+number.of.emotion.per.phase$relaxed <- number.of.emotion.per.phase$relaxed + relaxed 
+```
+
+# d09
+
+```{r}
+d09 <- data_eat[data_eat$dyad == "D09",]
+
+elapsed_time_d09 <- sum(d09$duration)
+```
+
+
+## interested
+```{r}
+phase1_end_time_d09 <- elapsed_time_d09 * (2/5)
+phase2_end_time_d09 <- phase1_end_time_d09 * 2
+phase3_end_time_d09 <- elapsed_time_d09
+
+interested <- c(sum(d09[d09$elapsed.time <= phase1_end_time_d09,"shared.emotion"] == "interested"),
+sum(d09[d09$elapsed.time > phase1_end_time_d09 & d09$elapsed.time <= phase2_end_time_d09 ,"shared.emotion"] == "interested"),
+sum(d09[d09$elapsed.time > phase2_end_time_d09 & d09$elapsed.time <= phase3_end_time_d09,"shared.emotion"] == "interested"))
+
+number.of.emotion.per.phase$interested <- number.of.emotion.per.phase$interested + interested
+```
+
+## focused
+```{r}
+phase1_end_time_d09 <- elapsed_time_d09 * (2/5)
+phase2_end_time_d09 <- phase1_end_time_d09 * 2
+phase3_end_time_d09 <- elapsed_time_d09
+
+focused <- c(sum(d09[d09$elapsed.time <= phase1_end_time_d09,"shared.emotion"] == "focused"),
+sum(d09[d09$elapsed.time > phase1_end_time_d09 & d09$elapsed.time <= phase2_end_time_d09 ,"shared.emotion"] == "focused"),
+sum(d09[d09$elapsed.time > phase2_end_time_d09 & d09$elapsed.time <= phase3_end_time_d09,"shared.emotion"] == "focused"))
+
+number.of.emotion.per.phase$focused <- number.of.emotion.per.phase$focused + focused 
+```
+
+## delighted
+```{r}
+phase1_end_time_d09 <- elapsed_time_d09 * (2/5)
+phase2_end_time_d09 <- phase1_end_time_d09 * 2
+phase3_end_time_d09 <- elapsed_time_d09
+
+delighted <- c(sum(d09[d09$elapsed.time <= phase1_end_time_d09,"shared.emotion"] == "delighted"),
+sum(d09[d09$elapsed.time > phase1_end_time_d09 & d09$elapsed.time <= phase2_end_time_d09 ,"shared.emotion"] == "delighted"),
+sum(d09[d09$elapsed.time > phase2_end_time_d09 & d09$elapsed.time <= phase3_end_time_d09,"shared.emotion"] == "delighted"))
+
+number.of.emotion.per.phase$delighted <- number.of.emotion.per.phase$delighted + delighted 
+```
+
+## satisfied
+```{r}
+phase1_end_time_d09 <- elapsed_time_d09 * (2/5)
+phase2_end_time_d09 <- phase1_end_time_d09 * 2
+phase3_end_time_d09 <- elapsed_time_d09
+
+satisfied <- c(sum(d09[d09$elapsed.time <= phase1_end_time_d09,"shared.emotion"] == "satisfied"),
+sum(d09[d09$elapsed.time > phase1_end_time_d09 & d09$elapsed.time <= phase2_end_time_d09 ,"shared.emotion"] == "satisfied"),
+sum(d09[d09$elapsed.time > phase2_end_time_d09 & d09$elapsed.time <= phase3_end_time_d09,"shared.emotion"] == "satisfied"))
+
+number.of.emotion.per.phase$satisfied <- number.of.emotion.per.phase$satisfied + satisfied 
+```
+
+## amused
+```{r}
+phase1_end_time_d09 <- elapsed_time_d09 * (2/5)
+phase2_end_time_d09 <- phase1_end_time_d09 * 2
+phase3_end_time_d09 <- elapsed_time_d09
+
+amused <- c(sum(d09[d09$elapsed.time <= phase1_end_time_d09,"shared.emotion"] == "amused"),
+sum(d09[d09$elapsed.time > phase1_end_time_d09 & d09$elapsed.time <= phase2_end_time_d09 ,"shared.emotion"] == "amused"),
+sum(d09[d09$elapsed.time > phase2_end_time_d09 & d09$elapsed.time <= phase3_end_time_d09,"shared.emotion"] == "amused"))
+
+number.of.emotion.per.phase$amused <- number.of.emotion.per.phase$amused + amused 
+```
+
+## relaxed
+```{r}
+phase1_end_time_d09 <- elapsed_time_d09 * (2/5)
+phase2_end_time_d09 <- phase1_end_time_d09 * 2
+phase3_end_time_d09 <- elapsed_time_d09
+
+relaxed <- c(sum(d09[d09$elapsed.time <= phase1_end_time_d09,"shared.emotion"] == "relaxed"),
+sum(d09[d09$elapsed.time > phase1_end_time_d09 & d09$elapsed.time <= phase2_end_time_d09 ,"shared.emotion"] == "relaxed"),
+sum(d09[d09$elapsed.time > phase2_end_time_d09 & d09$elapsed.time <= phase3_end_time_d09,"shared.emotion"] == "relaxed"))
+
+number.of.emotion.per.phase$relaxed <- number.of.emotion.per.phase$relaxed + relaxed 
+```
+
+# d13
+
+```{r}
+d13 <- data_eat[data_eat$dyad == "D13",]
+
+elapsed_time_d13 <- sum(d13$duration)
+```
+## interested
+```{r}
+phase1_end_time_d13 <- elapsed_time_d13 * (2/5)
+phase2_end_time_d13 <- phase1_end_time_d13 * 2
+phase3_end_time_d13 <- elapsed_time_d13
+
+interested <- c(sum(d13[d13$elapsed.time <= phase1_end_time_d13,"shared.emotion"] == "interested"),
+sum(d13[d13$elapsed.time > phase1_end_time_d13 & d13$elapsed.time <= phase2_end_time_d13 ,"shared.emotion"] == "interested"),
+sum(d13[d13$elapsed.time > phase2_end_time_d13 & d13$elapsed.time <= phase3_end_time_d13,"shared.emotion"] == "interested"))
+
+number.of.emotion.per.phase$interested <- number.of.emotion.per.phase$interested + interested
+```
+
+## focused
+```{r}
+phase1_end_time_d13 <- elapsed_time_d13 * (2/5)
+phase2_end_time_d13 <- phase1_end_time_d13 * 2
+phase3_end_time_d13 <- elapsed_time_d13
+
+focused <- c(sum(d13[d13$elapsed.time <= phase1_end_time_d13,"shared.emotion"] == "focused"),
+sum(d13[d13$elapsed.time > phase1_end_time_d13 & d13$elapsed.time <= phase2_end_time_d13 ,"shared.emotion"] == "focused"),
+sum(d13[d13$elapsed.time > phase2_end_time_d13 & d13$elapsed.time <= phase3_end_time_d13,"shared.emotion"] == "focused"))
+
+number.of.emotion.per.phase$focused <- number.of.emotion.per.phase$focused + focused 
+```
+
+## delighted
+```{r}
+phase1_end_time_d13 <- elapsed_time_d13 * (2/5)
+phase2_end_time_d13 <- phase1_end_time_d13 * 2
+phase3_end_time_d13 <- elapsed_time_d13
+
+delighted <- c(sum(d13[d13$elapsed.time <= phase1_end_time_d13,"shared.emotion"] == "delighted"),
+sum(d13[d13$elapsed.time > phase1_end_time_d13 & d13$elapsed.time <= phase2_end_time_d13 ,"shared.emotion"] == "delighted"),
+sum(d13[d13$elapsed.time > phase2_end_time_d13 & d13$elapsed.time <= phase3_end_time_d13,"shared.emotion"] == "delighted"))
+
+number.of.emotion.per.phase$delighted <- number.of.emotion.per.phase$delighted + delighted 
+```
+
+## satisfied
+```{r}
+phase1_end_time_d13 <- elapsed_time_d13 * (2/5)
+phase2_end_time_d13 <- phase1_end_time_d13 * 2
+phase3_end_time_d13 <- elapsed_time_d13
+
+satisfied <- c(sum(d13[d13$elapsed.time <= phase1_end_time_d13,"shared.emotion"] == "satisfied"),
+sum(d13[d13$elapsed.time > phase1_end_time_d13 & d13$elapsed.time <= phase2_end_time_d13 ,"shared.emotion"] == "satisfied"),
+sum(d13[d13$elapsed.time > phase2_end_time_d13 & d13$elapsed.time <= phase3_end_time_d13,"shared.emotion"] == "satisfied"))
+
+number.of.emotion.per.phase$satisfied <- number.of.emotion.per.phase$satisfied + satisfied 
+```
+
+## amused
+```{r}
+phase1_end_time_d13 <- elapsed_time_d13 * (2/5)
+phase2_end_time_d13 <- phase1_end_time_d13 * 2
+phase3_end_time_d13 <- elapsed_time_d13
+
+amused <- c(sum(d13[d13$elapsed.time <= phase1_end_time_d13,"shared.emotion"] == "amused"),
+sum(d13[d13$elapsed.time > phase1_end_time_d13 & d13$elapsed.time <= phase2_end_time_d13 ,"shared.emotion"] == "amused"),
+sum(d13[d13$elapsed.time > phase2_end_time_d13 & d13$elapsed.time <= phase3_end_time_d13,"shared.emotion"] == "amused"))
+
+number.of.emotion.per.phase$amused <- number.of.emotion.per.phase$amused + amused 
+```
+
+## relaxed
+```{r}
+phase1_end_time_d13 <- elapsed_time_d13 * (2/5)
+phase2_end_time_d13 <- phase1_end_time_d13 * 2
+phase3_end_time_d13 <- elapsed_time_d13
+
+relaxed <- c(sum(d13[d13$elapsed.time <= phase1_end_time_d13,"shared.emotion"] == "relaxed"),
+sum(d13[d13$elapsed.time > phase1_end_time_d13 & d13$elapsed.time <= phase2_end_time_d13 ,"shared.emotion"] == "relaxed"),
+sum(d13[d13$elapsed.time > phase2_end_time_d13 & d13$elapsed.time <= phase3_end_time_d13,"shared.emotion"] == "relaxed"))
+
+number.of.emotion.per.phase$relaxed <- number.of.emotion.per.phase$relaxed + relaxed 
+```
+
+# d16
+
+```{r}
+d16 <- data_eat[data_eat$dyad == "D16",]
+
+elapsed_time_d16 <- sum(d16$duration)
+```
+## interested
+```{r}
+phase1_end_time_d16 <- elapsed_time_d16 * (2/5)
+phase2_end_time_d16 <- phase1_end_time_d16 * 2
+phase3_end_time_d16 <- elapsed_time_d16
+
+interested <- c(sum(d16[d16$elapsed.time <= phase1_end_time_d16,"shared.emotion"] == "interested"),
+sum(d16[d16$elapsed.time > phase1_end_time_d16 & d16$elapsed.time <= phase2_end_time_d16 ,"shared.emotion"] == "interested"),
+sum(d16[d16$elapsed.time > phase2_end_time_d16 & d16$elapsed.time <= phase3_end_time_d16,"shared.emotion"] == "interested"))
+
+number.of.emotion.per.phase$interested <- number.of.emotion.per.phase$interested + interested
+```
+
+## focused
+```{r}
+phase1_end_time_d16 <- elapsed_time_d16 * (2/5)
+phase2_end_time_d16 <- phase1_end_time_d16 * 2
+phase3_end_time_d16 <- elapsed_time_d16
+
+focused <- c(sum(d16[d16$elapsed.time <= phase1_end_time_d16,"shared.emotion"] == "focused"),
+sum(d16[d16$elapsed.time > phase1_end_time_d16 & d16$elapsed.time <= phase2_end_time_d16 ,"shared.emotion"] == "focused"),
+sum(d16[d16$elapsed.time > phase2_end_time_d16 & d16$elapsed.time <= phase3_end_time_d16,"shared.emotion"] == "focused"))
+
+number.of.emotion.per.phase$focused <- number.of.emotion.per.phase$focused + focused 
+```
+
+## delighted
+```{r}
+phase1_end_time_d16 <- elapsed_time_d16 * (2/5)
+phase2_end_time_d16 <- phase1_end_time_d16 * 2
+phase3_end_time_d16 <- elapsed_time_d16
+
+delighted <- c(sum(d16[d16$elapsed.time <= phase1_end_time_d16,"shared.emotion"] == "delighted"),
+sum(d16[d16$elapsed.time > phase1_end_time_d16 & d16$elapsed.time <= phase2_end_time_d16 ,"shared.emotion"] == "delighted"),
+sum(d16[d16$elapsed.time > phase2_end_time_d16 & d16$elapsed.time <= phase3_end_time_d16,"shared.emotion"] == "delighted"))
+
+number.of.emotion.per.phase$delighted <- number.of.emotion.per.phase$delighted + delighted 
+```
+
+## satisfied
+```{r}
+phase1_end_time_d16 <- elapsed_time_d16 * (2/5)
+phase2_end_time_d16 <- phase1_end_time_d16 * 2
+phase3_end_time_d16 <- elapsed_time_d16
+
+satisfied <- c(sum(d16[d16$elapsed.time <= phase1_end_time_d16,"shared.emotion"] == "satisfied"),
+sum(d16[d16$elapsed.time > phase1_end_time_d16 & d16$elapsed.time <= phase2_end_time_d16 ,"shared.emotion"] == "satisfied"),
+sum(d16[d16$elapsed.time > phase2_end_time_d16 & d16$elapsed.time <= phase3_end_time_d16,"shared.emotion"] == "satisfied"))
+
+number.of.emotion.per.phase$satisfied <- number.of.emotion.per.phase$satisfied + satisfied 
+```
+
+## amused
+```{r}
+phase1_end_time_d16 <- elapsed_time_d16 * (2/5)
+phase2_end_time_d16 <- phase1_end_time_d16 * 2
+phase3_end_time_d16 <- elapsed_time_d16
+
+amused <- c(sum(d16[d16$elapsed.time <= phase1_end_time_d16,"shared.emotion"] == "amused"),
+sum(d16[d16$elapsed.time > phase1_end_time_d16 & d16$elapsed.time <= phase2_end_time_d16 ,"shared.emotion"] == "amused"),
+sum(d16[d16$elapsed.time > phase2_end_time_d16 & d16$elapsed.time <= phase3_end_time_d16,"shared.emotion"] == "amused"))
+
+number.of.emotion.per.phase$amused <- number.of.emotion.per.phase$amused + amused 
+```
+
+## relaxed
+```{r}
+phase1_end_time_d16 <- elapsed_time_d16 * (2/5)
+phase2_end_time_d16 <- phase1_end_time_d16 * 2
+phase3_end_time_d16 <- elapsed_time_d16
+
+relaxed <- c(sum(d16[d16$elapsed.time <= phase1_end_time_d16,"shared.emotion"] == "relaxed"),
+sum(d16[d16$elapsed.time > phase1_end_time_d16 & d16$elapsed.time <= phase2_end_time_d16 ,"shared.emotion"] == "relaxed"),
+sum(d16[d16$elapsed.time > phase2_end_time_d16 & d16$elapsed.time <= phase3_end_time_d16,"shared.emotion"] == "relaxed"))
+
+number.of.emotion.per.phase$relaxed <- number.of.emotion.per.phase$relaxed + relaxed 
+```
+
+# d21
+
+```{r}
+d21 <- data_eat[data_eat$dyad == "D21",]
+
+elapsed_time_d21 <- sum(d21$duration)
+```
+## interested
+```{r}
+phase1_end_time_d21 <- elapsed_time_d21 * (2/5)
+phase2_end_time_d21 <- phase1_end_time_d21 * 2
+phase3_end_time_d21 <- elapsed_time_d21
+
+interested <- c(sum(d21[d21$elapsed.time <= phase1_end_time_d21,"shared.emotion"] == "interested"),
+sum(d21[d21$elapsed.time > phase1_end_time_d21 & d21$elapsed.time <= phase2_end_time_d21 ,"shared.emotion"] == "interested"),
+sum(d21[d21$elapsed.time > phase2_end_time_d21 & d21$elapsed.time <= phase3_end_time_d21,"shared.emotion"] == "interested"))
+
+number.of.emotion.per.phase$interested <- number.of.emotion.per.phase$interested + interested
+```
+
+## focused
+```{r}
+phase1_end_time_d21 <- elapsed_time_d21 * (2/5)
+phase2_end_time_d21 <- phase1_end_time_d21 * 2
+phase3_end_time_d21 <- elapsed_time_d21
+
+focused <- c(sum(d21[d21$elapsed.time <= phase1_end_time_d21,"shared.emotion"] == "focused"),
+sum(d21[d21$elapsed.time > phase1_end_time_d21 & d21$elapsed.time <= phase2_end_time_d21 ,"shared.emotion"] == "focused"),
+sum(d21[d21$elapsed.time > phase2_end_time_d21 & d21$elapsed.time <= phase3_end_time_d21,"shared.emotion"] == "focused"))
+
+number.of.emotion.per.phase$focused <- number.of.emotion.per.phase$focused + focused 
+```
+
+## delighted
+```{r}
+phase1_end_time_d21 <- elapsed_time_d21 * (2/5)
+phase2_end_time_d21 <- phase1_end_time_d21 * 2
+phase3_end_time_d21 <- elapsed_time_d21
+
+delighted <- c(sum(d21[d21$elapsed.time <= phase1_end_time_d21,"shared.emotion"] == "delighted"),
+sum(d21[d21$elapsed.time > phase1_end_time_d21 & d21$elapsed.time <= phase2_end_time_d21 ,"shared.emotion"] == "delighted"),
+sum(d21[d21$elapsed.time > phase2_end_time_d21 & d21$elapsed.time <= phase3_end_time_d21,"shared.emotion"] == "delighted"))
+
+number.of.emotion.per.phase$delighted <- number.of.emotion.per.phase$delighted + delighted 
+```
+
+## satisfied
+```{r}
+phase1_end_time_d21 <- elapsed_time_d21 * (2/5)
+phase2_end_time_d21 <- phase1_end_time_d21 * 2
+phase3_end_time_d21 <- elapsed_time_d21
+
+satisfied <- c(sum(d21[d21$elapsed.time <= phase1_end_time_d21,"shared.emotion"] == "satisfied"),
+sum(d21[d21$elapsed.time > phase1_end_time_d21 & d21$elapsed.time <= phase2_end_time_d21 ,"shared.emotion"] == "satisfied"),
+sum(d21[d21$elapsed.time > phase2_end_time_d21 & d21$elapsed.time <= phase3_end_time_d21,"shared.emotion"] == "satisfied"))
+
+number.of.emotion.per.phase$satisfied <- number.of.emotion.per.phase$satisfied + satisfied 
+```
+
+## amused
+```{r}
+phase1_end_time_d21 <- elapsed_time_d21 * (2/5)
+phase2_end_time_d21 <- phase1_end_time_d21 * 2
+phase3_end_time_d21 <- elapsed_time_d21
+
+amused <- c(sum(d21[d21$elapsed.time <= phase1_end_time_d21,"shared.emotion"] == "amused"),
+sum(d21[d21$elapsed.time > phase1_end_time_d21 & d21$elapsed.time <= phase2_end_time_d21 ,"shared.emotion"] == "amused"),
+sum(d21[d21$elapsed.time > phase2_end_time_d21 & d21$elapsed.time <= phase3_end_time_d21,"shared.emotion"] == "amused"))
+
+number.of.emotion.per.phase$amused <- number.of.emotion.per.phase$amused + amused 
+```
+
+## relaxed
+```{r}
+phase1_end_time_d21 <- elapsed_time_d21 * (2/5)
+phase2_end_time_d21 <- phase1_end_time_d21 * 2
+phase3_end_time_d21 <- elapsed_time_d21
+
+relaxed <- c(sum(d21[d21$elapsed.time <= phase1_end_time_d21,"shared.emotion"] == "relaxed"),
+sum(d21[d21$elapsed.time > phase1_end_time_d21 & d21$elapsed.time <= phase2_end_time_d21 ,"shared.emotion"] == "relaxed"),
+sum(d21[d21$elapsed.time > phase2_end_time_d21 & d21$elapsed.time <= phase3_end_time_d21,"shared.emotion"] == "relaxed"))
+
+number.of.emotion.per.phase$relaxed <- number.of.emotion.per.phase$relaxed + relaxed 
+```
+
+# d23
+
+```{r}
+d23 <- data_eat[data_eat$dyad == "D23",]
+
+elapsed_time_d23 <- sum(d23$duration)
+```
+## interested
+```{r}
+phase1_end_time_d23 <- elapsed_time_d23 * (2/5)
+phase2_end_time_d23 <- phase1_end_time_d23 * 2
+phase3_end_time_d23 <- elapsed_time_d23
+
+interested <- c(sum(d23[d23$elapsed.time <= phase1_end_time_d23,"shared.emotion"] == "interested"),
+sum(d23[d23$elapsed.time > phase1_end_time_d23 & d23$elapsed.time <= phase2_end_time_d23 ,"shared.emotion"] == "interested"),
+sum(d23[d23$elapsed.time > phase2_end_time_d23 & d23$elapsed.time <= phase3_end_time_d23,"shared.emotion"] == "interested"))
+
+number.of.emotion.per.phase$interested <- number.of.emotion.per.phase$interested + interested
+```
+
+## focused
+```{r}
+phase1_end_time_d23 <- elapsed_time_d23 * (2/5)
+phase2_end_time_d23 <- phase1_end_time_d23 * 2
+phase3_end_time_d23 <- elapsed_time_d23
+
+focused <- c(sum(d23[d23$elapsed.time <= phase1_end_time_d23,"shared.emotion"] == "focused"),
+sum(d23[d23$elapsed.time > phase1_end_time_d23 & d23$elapsed.time <= phase2_end_time_d23 ,"shared.emotion"] == "focused"),
+sum(d23[d23$elapsed.time > phase2_end_time_d23 & d23$elapsed.time <= phase3_end_time_d23,"shared.emotion"] == "focused"))
+
+number.of.emotion.per.phase$focused <- number.of.emotion.per.phase$focused + focused 
+```
+
+## delighted
+```{r}
+phase1_end_time_d23 <- elapsed_time_d23 * (2/5)
+phase2_end_time_d23 <- phase1_end_time_d23 * 2
+phase3_end_time_d23 <- elapsed_time_d23
+
+delighted <- c(sum(d23[d23$elapsed.time <= phase1_end_time_d23,"shared.emotion"] == "delighted"),
+sum(d23[d23$elapsed.time > phase1_end_time_d23 & d23$elapsed.time <= phase2_end_time_d23 ,"shared.emotion"] == "delighted"),
+sum(d23[d23$elapsed.time > phase2_end_time_d23 & d23$elapsed.time <= phase3_end_time_d23,"shared.emotion"] == "delighted"))
+
+number.of.emotion.per.phase$delighted <- number.of.emotion.per.phase$delighted + delighted 
+```
+
+## satisfied
+```{r}
+phase1_end_time_d23 <- elapsed_time_d23 * (2/5)
+phase2_end_time_d23 <- phase1_end_time_d23 * 2
+phase3_end_time_d23 <- elapsed_time_d23
+
+satisfied <- c(sum(d23[d23$elapsed.time <= phase1_end_time_d23,"shared.emotion"] == "satisfied"),
+sum(d23[d23$elapsed.time > phase1_end_time_d23 & d23$elapsed.time <= phase2_end_time_d23 ,"shared.emotion"] == "satisfied"),
+sum(d23[d23$elapsed.time > phase2_end_time_d23 & d23$elapsed.time <= phase3_end_time_d23,"shared.emotion"] == "satisfied"))
+
+number.of.emotion.per.phase$satisfied <- number.of.emotion.per.phase$satisfied + satisfied 
+```
+
+## amused
+```{r}
+phase1_end_time_d23 <- elapsed_time_d23 * (2/5)
+phase2_end_time_d23 <- phase1_end_time_d23 * 2
+phase3_end_time_d23 <- elapsed_time_d23
+
+amused <- c(sum(d23[d23$elapsed.time <= phase1_end_time_d23,"shared.emotion"] == "amused"),
+sum(d23[d23$elapsed.time > phase1_end_time_d23 & d23$elapsed.time <= phase2_end_time_d23 ,"shared.emotion"] == "amused"),
+sum(d23[d23$elapsed.time > phase2_end_time_d23 & d23$elapsed.time <= phase3_end_time_d23,"shared.emotion"] == "amused"))
+
+number.of.emotion.per.phase$amused <- number.of.emotion.per.phase$amused + amused 
+```
+
+## relaxed
+```{r}
+phase1_end_time_d23 <- elapsed_time_d23 * (2/5)
+phase2_end_time_d23 <- phase1_end_time_d23 * 2
+phase3_end_time_d23 <- elapsed_time_d23
+
+relaxed <- c(sum(d23[d23$elapsed.time <= phase1_end_time_d23,"shared.emotion"] == "relaxed"),
+sum(d23[d23$elapsed.time > phase1_end_time_d23 & d23$elapsed.time <= phase2_end_time_d23 ,"shared.emotion"] == "relaxed"),
+sum(d23[d23$elapsed.time > phase2_end_time_d23 & d23$elapsed.time <= phase3_end_time_d23,"shared.emotion"] == "relaxed"))
+
+number.of.emotion.per.phase$relaxed <- number.of.emotion.per.phase$relaxed + relaxed 
+```
+
+# d26
+
+```{r}
+d26 <- data_eat[data_eat$dyad == "D26",]
+
+elapsed_time_d26 <- sum(d26$duration)
+```
+## interested
+```{r}
+phase1_end_time_d26 <- elapsed_time_d26 * (2/5)
+phase2_end_time_d26 <- phase1_end_time_d26 * 2
+phase3_end_time_d26 <- elapsed_time_d26
+
+interested <- c(sum(d26[d26$elapsed.time <= phase1_end_time_d26,"shared.emotion"] == "interested"),
+sum(d26[d26$elapsed.time > phase1_end_time_d26 & d26$elapsed.time <= phase2_end_time_d26 ,"shared.emotion"] == "interested"),
+sum(d26[d26$elapsed.time > phase2_end_time_d26 & d26$elapsed.time <= phase3_end_time_d26,"shared.emotion"] == "interested"))
+
+number.of.emotion.per.phase$interested <- number.of.emotion.per.phase$interested + interested
+```
+
+## focused
+```{r}
+phase1_end_time_d26 <- elapsed_time_d26 * (2/5)
+phase2_end_time_d26 <- phase1_end_time_d26 * 2
+phase3_end_time_d26 <- elapsed_time_d26
+
+focused <- c(sum(d26[d26$elapsed.time <= phase1_end_time_d26,"shared.emotion"] == "focused"),
+sum(d26[d26$elapsed.time > phase1_end_time_d26 & d26$elapsed.time <= phase2_end_time_d26 ,"shared.emotion"] == "focused"),
+sum(d26[d26$elapsed.time > phase2_end_time_d26 & d26$elapsed.time <= phase3_end_time_d26,"shared.emotion"] == "focused"))
+
+number.of.emotion.per.phase$focused <- number.of.emotion.per.phase$focused + focused 
+```
+
+## delighted
+```{r}
+phase1_end_time_d26 <- elapsed_time_d26 * (2/5)
+phase2_end_time_d26 <- phase1_end_time_d26 * 2
+phase3_end_time_d26 <- elapsed_time_d26
+
+delighted <- c(sum(d26[d26$elapsed.time <= phase1_end_time_d26,"shared.emotion"] == "delighted"),
+sum(d26[d26$elapsed.time > phase1_end_time_d26 & d26$elapsed.time <= phase2_end_time_d26 ,"shared.emotion"] == "delighted"),
+sum(d26[d26$elapsed.time > phase2_end_time_d26 & d26$elapsed.time <= phase3_end_time_d26,"shared.emotion"] == "delighted"))
+
+number.of.emotion.per.phase$delighted <- number.of.emotion.per.phase$delighted + delighted 
+```
+
+## satisfied
+```{r}
+phase1_end_time_d26 <- elapsed_time_d26 * (2/5)
+phase2_end_time_d26 <- phase1_end_time_d26 * 2
+phase3_end_time_d26 <- elapsed_time_d26
+
+satisfied <- c(sum(d26[d26$elapsed.time <= phase1_end_time_d26,"shared.emotion"] == "satisfied"),
+sum(d26[d26$elapsed.time > phase1_end_time_d26 & d26$elapsed.time <= phase2_end_time_d26 ,"shared.emotion"] == "satisfied"),
+sum(d26[d26$elapsed.time > phase2_end_time_d26 & d26$elapsed.time <= phase3_end_time_d26,"shared.emotion"] == "satisfied"))
+
+number.of.emotion.per.phase$satisfied <- number.of.emotion.per.phase$satisfied + satisfied 
+```
+
+## amused
+```{r}
+phase1_end_time_d26 <- elapsed_time_d26 * (2/5)
+phase2_end_time_d26 <- phase1_end_time_d26 * 2
+phase3_end_time_d26 <- elapsed_time_d26
+
+amused <- c(sum(d26[d26$elapsed.time <= phase1_end_time_d26,"shared.emotion"] == "amused"),
+sum(d26[d26$elapsed.time > phase1_end_time_d26 & d26$elapsed.time <= phase2_end_time_d26 ,"shared.emotion"] == "amused"),
+sum(d26[d26$elapsed.time > phase2_end_time_d26 & d26$elapsed.time <= phase3_end_time_d26,"shared.emotion"] == "amused"))
+
+number.of.emotion.per.phase$amused <- number.of.emotion.per.phase$amused + amused 
+```
+
+## relaxed
+```{r}
+phase1_end_time_d26 <- elapsed_time_d26 * (2/5)
+phase2_end_time_d26 <- phase1_end_time_d26 * 2
+phase3_end_time_d26 <- elapsed_time_d26
+
+relaxed <- c(sum(d26[d26$elapsed.time <= phase1_end_time_d26,"shared.emotion"] == "relaxed"),
+sum(d26[d26$elapsed.time > phase1_end_time_d26 & d26$elapsed.time <= phase2_end_time_d26 ,"shared.emotion"] == "relaxed"),
+sum(d26[d26$elapsed.time > phase2_end_time_d26 & d26$elapsed.time <= phase3_end_time_d26,"shared.emotion"] == "relaxed"))
+
+number.of.emotion.per.phase$relaxed <- number.of.emotion.per.phase$relaxed + relaxed 
+```
+
+# d27
+
+```{r}
+d27 <- data_eat[data_eat$dyad == "D27",]
+
+elapsed_time_d27 <- sum(d27$duration)
+```
+## interested
+```{r}
+phase1_end_time_d27 <- elapsed_time_d27 * (2/5)
+phase2_end_time_d27 <- phase1_end_time_d27 * 2
+phase3_end_time_d27 <- elapsed_time_d27
+
+interested <- c(sum(d27[d27$elapsed.time <= phase1_end_time_d27,"shared.emotion"] == "interested"),
+sum(d27[d27$elapsed.time > phase1_end_time_d27 & d27$elapsed.time <= phase2_end_time_d27 ,"shared.emotion"] == "interested"),
+sum(d27[d27$elapsed.time > phase2_end_time_d27 & d27$elapsed.time <= phase3_end_time_d27,"shared.emotion"] == "interested"))
+
+number.of.emotion.per.phase$interested <- number.of.emotion.per.phase$interested + interested
+```
+
+## focused
+```{r}
+phase1_end_time_d27 <- elapsed_time_d27 * (2/5)
+phase2_end_time_d27 <- phase1_end_time_d27 * 2
+phase3_end_time_d27 <- elapsed_time_d27
+
+focused <- c(sum(d27[d27$elapsed.time <= phase1_end_time_d27,"shared.emotion"] == "focused"),
+sum(d27[d27$elapsed.time > phase1_end_time_d27 & d27$elapsed.time <= phase2_end_time_d27 ,"shared.emotion"] == "focused"),
+sum(d27[d27$elapsed.time > phase2_end_time_d27 & d27$elapsed.time <= phase3_end_time_d27,"shared.emotion"] == "focused"))
+
+number.of.emotion.per.phase$focused <- number.of.emotion.per.phase$focused + focused 
+```
+
+## delighted
+```{r}
+phase1_end_time_d27 <- elapsed_time_d27 * (2/5)
+phase2_end_time_d27 <- phase1_end_time_d27 * 2
+phase3_end_time_d27 <- elapsed_time_d27
+
+delighted <- c(sum(d27[d27$elapsed.time <= phase1_end_time_d27,"shared.emotion"] == "delighted"),
+sum(d27[d27$elapsed.time > phase1_end_time_d27 & d27$elapsed.time <= phase2_end_time_d27 ,"shared.emotion"] == "delighted"),
+sum(d27[d27$elapsed.time > phase2_end_time_d27 & d27$elapsed.time <= phase3_end_time_d27,"shared.emotion"] == "delighted"))
+
+number.of.emotion.per.phase$delighted <- number.of.emotion.per.phase$delighted + delighted 
+```
+
+## satisfied
+```{r}
+phase1_end_time_d27 <- elapsed_time_d27 * (2/5)
+phase2_end_time_d27 <- phase1_end_time_d27 * 2
+phase3_end_time_d27 <- elapsed_time_d27
+
+satisfied <- c(sum(d27[d27$elapsed.time <= phase1_end_time_d27,"shared.emotion"] == "satisfied"),
+sum(d27[d27$elapsed.time > phase1_end_time_d27 & d27$elapsed.time <= phase2_end_time_d27 ,"shared.emotion"] == "satisfied"),
+sum(d27[d27$elapsed.time > phase2_end_time_d27 & d27$elapsed.time <= phase3_end_time_d27,"shared.emotion"] == "satisfied"))
+
+number.of.emotion.per.phase$satisfied <- number.of.emotion.per.phase$satisfied + satisfied 
+```
+
+## amused
+```{r}
+phase1_end_time_d27 <- elapsed_time_d27 * (2/5)
+phase2_end_time_d27 <- phase1_end_time_d27 * 2
+phase3_end_time_d27 <- elapsed_time_d27
+
+amused <- c(sum(d27[d27$elapsed.time <= phase1_end_time_d27,"shared.emotion"] == "amused"),
+sum(d27[d27$elapsed.time > phase1_end_time_d27 & d27$elapsed.time <= phase2_end_time_d27 ,"shared.emotion"] == "amused"),
+sum(d27[d27$elapsed.time > phase2_end_time_d27 & d27$elapsed.time <= phase3_end_time_d27,"shared.emotion"] == "amused"))
+
+number.of.emotion.per.phase$amused <- number.of.emotion.per.phase$amused + amused 
+```
+
+## relaxed
+```{r}
+phase1_end_time_d27 <- elapsed_time_d27 * (2/5)
+phase2_end_time_d27 <- phase1_end_time_d27 * 2
+phase3_end_time_d27 <- elapsed_time_d27
+
+relaxed <- c(sum(d27[d27$elapsed.time <= phase1_end_time_d27,"shared.emotion"] == "relaxed"),
+sum(d27[d27$elapsed.time > phase1_end_time_d27 & d27$elapsed.time <= phase2_end_time_d27 ,"shared.emotion"] == "relaxed"),
+sum(d27[d27$elapsed.time > phase2_end_time_d27 & d27$elapsed.time <= phase3_end_time_d27,"shared.emotion"] == "relaxed"))
+
+number.of.emotion.per.phase$relaxed <- number.of.emotion.per.phase$relaxed + relaxed 
+```
+
+# d29
+
+```{r}
+d29 <- data_eat[data_eat$dyad == "D29",]
+
+elapsed_time_d29 <- sum(d29$duration)
+```
+## interested
+```{r}
+phase1_end_time_d29 <- elapsed_time_d29 * (2/5)
+phase2_end_time_d29 <- phase1_end_time_d29 * 2
+phase3_end_time_d29 <- elapsed_time_d29
+
+interested <- c(sum(d29[d29$elapsed.time <= phase1_end_time_d29,"shared.emotion"] == "interested"),
+sum(d29[d29$elapsed.time > phase1_end_time_d29 & d29$elapsed.time <= phase2_end_time_d29 ,"shared.emotion"] == "interested"),
+sum(d29[d29$elapsed.time > phase2_end_time_d29 & d29$elapsed.time <= phase3_end_time_d29,"shared.emotion"] == "interested"))
+
+number.of.emotion.per.phase$interested <- number.of.emotion.per.phase$interested + interested
+```
+
+## focused
+```{r}
+phase1_end_time_d29 <- elapsed_time_d29 * (2/5)
+phase2_end_time_d29 <- phase1_end_time_d29 * 2
+phase3_end_time_d29 <- elapsed_time_d29
+
+focused <- c(sum(d29[d29$elapsed.time <= phase1_end_time_d29,"shared.emotion"] == "focused"),
+sum(d29[d29$elapsed.time > phase1_end_time_d29 & d29$elapsed.time <= phase2_end_time_d29 ,"shared.emotion"] == "focused"),
+sum(d29[d29$elapsed.time > phase2_end_time_d29 & d29$elapsed.time <= phase3_end_time_d29,"shared.emotion"] == "focused"))
+
+number.of.emotion.per.phase$focused <- number.of.emotion.per.phase$focused + focused 
+```
+
+## delighted
+```{r}
+phase1_end_time_d29 <- elapsed_time_d29 * (2/5)
+phase2_end_time_d29 <- phase1_end_time_d29 * 2
+phase3_end_time_d29 <- elapsed_time_d29
+
+delighted <- c(sum(d29[d29$elapsed.time <= phase1_end_time_d29,"shared.emotion"] == "delighted"),
+sum(d29[d29$elapsed.time > phase1_end_time_d29 & d29$elapsed.time <= phase2_end_time_d29 ,"shared.emotion"] == "delighted"),
+sum(d29[d29$elapsed.time > phase2_end_time_d29 & d29$elapsed.time <= phase3_end_time_d29,"shared.emotion"] == "delighted"))
+
+number.of.emotion.per.phase$delighted <- number.of.emotion.per.phase$delighted + delighted 
+```
+
+## satisfied
+```{r}
+phase1_end_time_d29 <- elapsed_time_d29 * (2/5)
+phase2_end_time_d29 <- phase1_end_time_d29 * 2
+phase3_end_time_d29 <- elapsed_time_d29
+
+satisfied <- c(sum(d29[d29$elapsed.time <= phase1_end_time_d29,"shared.emotion"] == "satisfied"),
+sum(d29[d29$elapsed.time > phase1_end_time_d29 & d29$elapsed.time <= phase2_end_time_d29 ,"shared.emotion"] == "satisfied"),
+sum(d29[d29$elapsed.time > phase2_end_time_d29 & d29$elapsed.time <= phase3_end_time_d29,"shared.emotion"] == "satisfied"))
+
+number.of.emotion.per.phase$satisfied <- number.of.emotion.per.phase$satisfied + satisfied 
+```
+
+## amused
+```{r}
+phase1_end_time_d29 <- elapsed_time_d29 * (2/5)
+phase2_end_time_d29 <- phase1_end_time_d29 * 2
+phase3_end_time_d29 <- elapsed_time_d29
+
+amused <- c(sum(d29[d29$elapsed.time <= phase1_end_time_d29,"shared.emotion"] == "amused"),
+sum(d29[d29$elapsed.time > phase1_end_time_d29 & d29$elapsed.time <= phase2_end_time_d29 ,"shared.emotion"] == "amused"),
+sum(d29[d29$elapsed.time > phase2_end_time_d29 & d29$elapsed.time <= phase3_end_time_d29,"shared.emotion"] == "amused"))
+
+number.of.emotion.per.phase$amused <- number.of.emotion.per.phase$amused + amused 
+```
+
+## relaxed
+```{r}
+phase1_end_time_d29 <- elapsed_time_d29 * (2/5)
+phase2_end_time_d29 <- phase1_end_time_d29 * 2
+phase3_end_time_d29 <- elapsed_time_d29
+
+relaxed <- c(sum(d29[d29$elapsed.time <= phase1_end_time_d29,"shared.emotion"] == "relaxed"),
+sum(d29[d29$elapsed.time > phase1_end_time_d29 & d29$elapsed.time <= phase2_end_time_d29 ,"shared.emotion"] == "relaxed"),
+sum(d29[d29$elapsed.time > phase2_end_time_d29 & d29$elapsed.time <= phase3_end_time_d29,"shared.emotion"] == "relaxed"))
+
+number.of.emotion.per.phase$relaxed <- number.of.emotion.per.phase$relaxed + relaxed 
+```
+```{r}
+number.of.emotion.per.phase
+```
